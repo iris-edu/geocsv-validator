@@ -1,14 +1,12 @@
+#!/usr/local/bin/python
 
 import sys
 import urllib2
 import csv
 
-def runit():
-  #   http://geows.ds.iris.edu/geows-uf/wovodat/1/query?format=text&showNumberFormatExceptions=true
-  URL = sys.argv[1]
-
+def runvalidate(url_string):
   try:
-    response = urllib2.urlopen(URL)
+    response = urllib2.urlopen(url_string)
   except urllib2.HTTPError as e:
     print e.code
     print e.read()
@@ -54,6 +52,9 @@ def runit():
   print "totalCnt: ", totalCnt, "  rowCnt; ", rowCnt
 
 if __name__ == "__main__":
-  runit()
+    #   http://geows.ds.iris.edu/geows-uf/wovodat/1/query?format=text&showNumberFormatExceptions=true
+  url_string = sys.argv[1]
 
+  runvalidate(url_string)
 
+print "------------------ __name__: ", __name__

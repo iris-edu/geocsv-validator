@@ -3,24 +3,16 @@
 import unittest
 import main.geocsvValidate
 
-class Widget():
-  def size(self):
-    print "--- sz func"
-    return (50,50)
-
-class DefaultWidgetSizeTestCase(unittest.TestCase):
+class geocsvValidateTest1TestCase(unittest.TestCase):
   def runTest(self):
-    widget = Widget()
-    print "****** size: ", widget.size()
-    assert widget.size() == (50,50), 'incorrect default size'
-    print "after assert"
+    target_url = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/query?format=text&showNumberFormatExceptions=true'
+    main.geocsvValidate.runvalidate(target_url)
 
 def run_test_cases():
-  testCase1 = DefaultWidgetSizeTestCase()
-
+  print "*********** run_test_cases __name__: ", __name__
   runner = unittest.TextTestRunner()
+
+  testCase1 = geocsvValidateTest1TestCase()
   runner.run(testCase1)
 
-  main.geocsvValidate.runit()
 
-print "*********** the one testsample __name__: ", __name__
