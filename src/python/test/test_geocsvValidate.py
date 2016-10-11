@@ -15,6 +15,11 @@ import unittest
 import main.geocsvValidate
 
 class geocsvValidateTest1TestCase(unittest.TestCase):
+##  def setUp(self):
+##    self.t1 = geocsvValidateTest1TestCase()
+##  def tearDown(self):
+##    self.t1.dispose()
+##    self.t1 = None
   def testrunTest1(self):
     target_url = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/query?format=text&showNumberFormatExceptions=true'
     main.geocsvValidate.runvalidate(target_url)
@@ -23,13 +28,23 @@ class geocsvValidateTest1TestCase(unittest.TestCase):
     main.geocsvValidate.runvalidate(target_url)
 
 def run_test_cases():
-  print ("*********** run_test_cases __name__: ", __name__)
+  print ("*********** run_test_cases 2 __name__: ", __name__)
   runner = unittest.TextTestRunner()
 
-  testCase1 = geocsvValidateTest1TestCase(testrunTest1)
-  testCase2 = geocsvValidateTest1TestCase(testrunTest2)
+  testCase1 = geocsvValidateTest1TestCase("testrunTest1")
+  testCase2 = geocsvValidateTest1TestCase("testrunTest2")
 
   runner.run(testCase1)
   runner.run(testCase2)
+
+def run_test_suites():
+  print ("*********** run_test_cases suite __name__: ", __name__)
+
+  suite = unittest.TestSuite()
+  suite.addTest(geocsvValidateTest1TestCase("testrunTest1"))
+  suite.addTest(geocsvValidateTest1TestCase("testrunTest2"))
+
+  runner = unittest.TextTestRunner()
+  runner.run(suite)
 
 

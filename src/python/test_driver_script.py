@@ -15,6 +15,6 @@ import test.test_geocsvValidate
 
 print("*********** test driver start, context name: " + __name__ + "  python env: " + sys.version)
 
-test.test_geocsvValidate.run_test_cases()
+test.test_geocsvValidate.run_test_suites()
 
 print("*********** test driver end, context name: ", __name__)
