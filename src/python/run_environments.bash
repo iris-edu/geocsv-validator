@@ -6,9 +6,9 @@ dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 # between python 2.x and 3.x and run the test code
 
 source activate root
-${dir}/test_driver_script.py
+${dir}/run_tests.py
 
 
 source activate py351
-${dir}/test_driver_script.py
+${dir}/run_tests.py
 

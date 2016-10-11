@@ -11,10 +11,14 @@ from builtins import *
 from future.builtins.disabled import *
 
 import sys
-import test.test_geocsvValidate
+import test.handler_tests
 
-print("*********** test driver start, context name: " + __name__ + "  python env: " + sys.version)
+print("------------------------ python environment")
+print(sys.version)
+print("------------------------")
 
-test.test_geocsvValidate.run_test_suites()
+print("** start, context name: " + __name__)
 
-print("*********** test driver end, context name: ", __name__)
+test.handler_tests.run_test_suites()
+
+print("** end, context name: " + __name__)

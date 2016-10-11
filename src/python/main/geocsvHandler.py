@@ -1,4 +1,4 @@
-#!#!/usr/bin/env python
+#!/usr/bin/env python
 
 # these imports are to enable writing code in python 3 and
 # and also enable the same code to run in python 2.
@@ -21,8 +21,9 @@ from urllib.error import HTTPError
 import sys
 import csv
 
-def runvalidate(url_string):
+def validate(url_string):
   try:
+    print("****** try: " + url_string)
     response = urlopen(url_string)
   except HTTPError as e:
     print(e.code)
@@ -30,7 +31,7 @@ def runvalidate(url_string):
     print("** failed on target: ", URL)
     sys.exit()
 
-  print("** waiting for reply....")
+  print("****** waiting for reply ...")
 
   ##text = response.read()
   ##print ("**** text: " + text)
@@ -83,4 +84,3 @@ if __name__ == "__main__" \
 
   runvalidate(url_string)
 
-print("------------------ __name__: ", __name__)
