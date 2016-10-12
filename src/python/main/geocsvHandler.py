@@ -21,6 +21,8 @@ from urllib.error import HTTPError
 import sys
 import csv
 
+my_line_break_chars = '\n\r'
+
 def get_response(url_string, verbose):
   try:
     if verbose: print("****** try: " + url_string)
@@ -45,13 +47,16 @@ def handle_octothorp_row(rStr, geme, verbose):
 
 def read_geocsv_lines(url_iter, gc, gm):
   try:
-    rowStr = next(url_iter).decode('utf-8')
+    rowStr = next(url_iter).decode('utf-8').rstrip(my_line_break_chars)
     gm['totalLines'] = gm['totalLines'] + 1
     gc['d'] = gc['d'] + 1
+    if len(rowStr) <= 0 :
+      gm['zeroLenCnt'] = gm['zeroLenCnt'] + 1
+      print("^^^^^^^^^ unexpected c, gm: ", gm, " l: ", len(rowStr))
+      rowStr = read_geocsv_lines(url_iter, gc, gm)
     if rowStr[0:1] == '#' :
-      print("$$$$$$$$$ next: " + rowStr.rstrip())
+      print("$$$$$$$$$ next: " + rowStr)
       # do geocsv processing
-
       rowStr = read_geocsv_lines(url_iter, gc, gm)
   except StopIteration:
     raise StopIteration
@@ -71,7 +76,7 @@ def handle_csv_row(rowStr, delimiter, gm, verbose):
       # ignore this for now, should have been caught before here,
       # count up to see if this occurs
       gm['csvZeroLenCnt'] = gm['csvZeroLenCnt'] + 1
-      print("-- unexpected gm: ", gm, " l: ", len(row), "  r: ", "<>".join(row))
+      print("-- unexpected b, gm: ", gm, " l: ", len(row), "  r: ", "<>".join(row))
 
 def validate(url_string, verbose):
   # put newline to separate from unit test "dot"
@@ -97,12 +102,12 @@ def validate(url_string, verbose):
   looping = True
   while looping:
     try:
-      rowStr = next(url_iter).decode('utf-8')
+      rowStr = next(url_iter).decode('utf-8').rstrip(my_line_break_chars)
       gm['totalLines'] = gm['totalLines'] + 1
 
       if len(rowStr) <= 0 :
         gm['zeroLenCnt'] = gm['zeroLenCnt'] + 1
-        print("-- unexpected gm: ", gm, " l: ", len(row))
+        print("^^^^^^^^^ unexpected a, gm: ", gm, " l: ", len(rowStr))
         continue
 
       if rowStr[0:1] == '#':
@@ -115,6 +120,8 @@ def validate(url_string, verbose):
 
             rowStr = read_geocsv_lines(url_iter, gc, gm)
             print("@@@@@@@@@ gc: ", gc)
+            # handle first non-geocsv line
+            handle_csv_row(rowStr, '|', gm, verbose)
           else:
             if gc['GCStart'] == False:
               print("^^^^^^^^^ non-geocsv line: " + rowStr.rstrip())
@@ -125,10 +132,9 @@ def validate(url_string, verbose):
           print("^^^^^^^^^ non-geocsv line: " + rowStr.rstrip())
           gm['octNotGC'] = gm['octNotGC'] + 1
           continue
-
-      # the last read of read_geocsv_lines should be header line of CSV, or
-      # if no header line, the first data row
-      handle_csv_row(rowStr, '|', gm, verbose)
+      else:
+        # handle most non-geocsv for generic comment lines
+        handle_csv_row(rowStr, '|', gm, verbose)
     except StopIteration:
       print("** finished **")
       looping = False

@@ -1,0 +1,3 @@
+# dataset: GeoCSV 2.0 
+# delimiter: |
+# comment: runOption: showNumberFormatExceptions  all records in base data, check lat, long, and elevation

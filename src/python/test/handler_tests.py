@@ -34,6 +34,22 @@ class ExternalURLTests(unittest.TestCase):
         + '&latitudes=NH,NM,E,SM,SH&observatories=AAA,BEL,CKI,DED,EBR,FCC,GAN'\
         + '&type=best&rate=minute'
     main.geocsvHandler.validate(target_url, g_verbose)
+  def test3(self):
+    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
+        + '/python/test/resources/wovodat_sample1.geocsv'
+    main.geocsvHandler.validate(target_url, g_verbose)
+  def test4(self):
+    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
+        + '/python/test/resources/wovodat_sample2.geocsv'
+    main.geocsvHandler.validate(target_url, g_verbose)
+  def test5(self):
+    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
+        + '/python/test/resources/wovodat_sample3.geocsv'
+    main.geocsvHandler.validate(target_url, g_verbose)
+  def test6(self):
+    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
+        + '/python/test/resources/wovodat_sample4.geocsv'
+    main.geocsvHandler.validate(target_url, g_verbose)
 
 def run_test_suites(verbose):
   global g_verbose
@@ -42,8 +58,12 @@ def run_test_suites(verbose):
   print ("**** run_test_suites context name: ", __name__)
 
   suite = unittest.TestSuite()
-  suite.addTest(ExternalURLTests("test1"))
   suite.addTest(ExternalURLTests("test2"))
+  suite.addTest(ExternalURLTests("test1"))
+  suite.addTest(ExternalURLTests("test3"))
+  suite.addTest(ExternalURLTests("test4"))
+  suite.addTest(ExternalURLTests("test5"))
+  suite.addTest(ExternalURLTests("test6"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)
