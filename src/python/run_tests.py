@@ -19,6 +19,7 @@ print("------------------------")
 
 print("** start, context name: " + __name__)
 
-test.handler_tests.run_test_suites()
+verbose = True
+test.handler_tests.run_test_suites(verbose)
 
 print("** end, context name: " + __name__)

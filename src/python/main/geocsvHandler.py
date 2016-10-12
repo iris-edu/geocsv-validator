@@ -21,9 +21,9 @@ from urllib.error import HTTPError
 import sys
 import csv
 
-def validate(url_string):
+def get_response(url_string, verbose):
   try:
-    print("****** try: " + url_string)
+    if verbose: print("****** try: " + url_string)
     response = urlopen(url_string)
   except HTTPError as e:
     print(e.code)
@@ -31,47 +31,112 @@ def validate(url_string):
     print("** failed on target: ", URL)
     sys.exit()
 
-  print("****** waiting for reply ...")
+  if verbose: print("****** waiting for reply ...")
+
+  return response
+
+def handle_octothorp_row(rStr, geme, verbose):
+  if verbose: print("geocsv? or skip if after start: " + rStr.rstrip())
+
+  if geme['GCStart'] == False: 
+    if rStr[1:21] == ' dataset: GeoCSV 2.0': geme['GCStart'] = True
+  else:
+    return
+
+def read_geocsv_lines(url_iter, gc, gm):
+  try:
+    rowStr = next(url_iter).decode('utf-8')
+    gm['totalLines'] = gm['totalLines'] + 1
+    gc['d'] = gc['d'] + 1
+    if rowStr[0:1] == '#' :
+      print("$$$$$$$$$ next: " + rowStr.rstrip())
+      # do geocsv processing
+
+      rowStr = read_geocsv_lines(url_iter, gc, gm)
+  except StopIteration:
+    raise StopIteration
+  return rowStr
+
+def handle_csv_row(rowStr, delimiter, gm, verbose):
+  # csv module interface is not setup to stream one line at a time,
+  # so make a list of 1 row
+  rowiter = iter(list([rowStr]))
+
+  csvreadr = csv.reader(rowiter, delimiter = delimiter)
+  for row in csvreadr:
+    gm['rowCnt'] = gm['rowCnt'] + 1
+    if verbose: print(gm, " l: ", len(row), "  r: ", "  <:>  ".join(row))
+
+    if len(row) <= 0 :
+      # ignore this for now, should have been caught before here,
+      # count up to see if this occurs
+      gm['csvZeroLenCnt'] = gm['csvZeroLenCnt'] + 1
+      print("-- unexpected gm: ", gm, " l: ", len(row), "  r: ", "<>".join(row))
+
+def validate(url_string, verbose):
+  # put newline to separate from unit test "dot"
+  if verbose: print()
+
+  response = get_response(url_string, verbose)
 
   ##text = response.read()
   ##print ("**** text: " + text)
 
-  totalCnt = 0;
-  rowCnt = 0
-  try:
-    for line in response.readlines() :
-      totalCnt = totalCnt + 1
+  # capture metrics about content
+  # gm - geocsv metrics about geocsv content
+  # oct - short for octothorp, technical name for hash symbol
+  # GC - short for geocsv
+  gm = {'totalLines': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
+    'octLeadIn': 0, 'octNotGC': 0,
+    'csvZeroLenCnt': 0}
 
-      rowStr = line.decode('utf-8')
+  # geocsv object
+  gc = {'GCStart': False, 'd': 0}
 
-      if len(rowStr) == 0 :
-        print ("** line of length 0")
+  url_iter = response.readlines().__iter__()
+  looping = True
+  while looping:
+    try:
+      rowStr = next(url_iter).decode('utf-8')
+      gm['totalLines'] = gm['totalLines'] + 1
+
+      if len(rowStr) <= 0 :
+        gm['zeroLenCnt'] = gm['zeroLenCnt'] + 1
+        print("-- unexpected gm: ", gm, " l: ", len(row))
         continue
 
-      if rowStr[0:1] == '#' :
-        print("geocsv? or skip if after start: " + rowStr.rstrip())
-        continue
+      if rowStr[0:1] == '#':
+        # ignore octothorp lines until start of geocsv, then read
+        # lines as geocsv header lines until first non-octothorp line
+        if gc['GCStart'] == False:
+          if rowStr[1:21] == ' dataset: GeoCSV 2.0':
+            gc['GCStart'] = True
+            print("&&&&&&&&& start of geocsv")
 
-      # make a list of 1 so as to access csv reader interface,
-      # TBD - look for a better way
-      rowlist = []
-      rowlist.append(rowStr)
-      rowiter = iter(rowlist)
-
-      csvreadr = csv.reader(rowiter, delimiter='|')
-      for row in csvreadr:
-        rowCnt = rowCnt + 1
-
-        if len(row) <= 0 :
-          print("** row of length 0")
+            rowStr = read_geocsv_lines(url_iter, gc, gm)
+            print("@@@@@@@@@ gc: ", gc)
+          else:
+            if gc['GCStart'] == False:
+              print("^^^^^^^^^ non-geocsv line: " + rowStr.rstrip())
+              gm['octLeadIn'] = gm['octLeadIn'] + 1
+        else:
+          # ignore octothorp lines before start of geocsv or after reading
+          # initial, consecutive set of geocsv lines
+          print("^^^^^^^^^ non-geocsv line: " + rowStr.rstrip())
+          gm['octNotGC'] = gm['octNotGC'] + 1
           continue
 
-        print(rowCnt, " l: ", len(row), "  r: ", "  <:>  ".join(row))
+      # the last read of read_geocsv_lines should be header line of CSV, or
+      # if no header line, the first data row
+      handle_csv_row(rowStr, '|', gm, verbose)
+    except StopIteration:
+      print("** finished **")
+      looping = False
+    finally:
+      response.close()
 
-  finally:
-    response.close()
-
-  print("totalCnt: ", totalCnt, "  rowCnt; ", rowCnt)
+  if verbose: print(">>> gm: ", gm)
+  if verbose: print(">>> gc: ", gc)
 
 if __name__ == "__main__" \
     or __name__ == "geocsvValidate" \
