@@ -11,17 +11,23 @@ from builtins import *
 from future.builtins.disabled import *
 
 
+import os
 import unittest
 import main.geocsvHandler
 
 g_verbose = False
 
 class ExternalURLTests(unittest.TestCase):
-##  def setUp(self):
+  def setUp(self):
+    # Note: this breaks if these files are relocated
+    self.resource_path = os.path.dirname(os.path.realpath(__file__))\
+         + '/resources'
 ##    self.t1 = ExternalURLTests(self)
 ##  def tearDown(self):
 ##    self.t1.dispose()
 ##    self.t1 = None
+
+  # some live URLs
   def test1(self):
     target_url = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
         + 'query?format=text&showNumberFormatExceptions=true'
@@ -34,21 +40,25 @@ class ExternalURLTests(unittest.TestCase):
         + '&latitudes=NH,NM,E,SM,SH&observatories=AAA,BEL,CKI,DED,EBR,FCC,GAN'\
         + '&type=best&rate=minute'
     main.geocsvHandler.validate(target_url, g_verbose)
+
+  # files from test area
   def test3(self):
-    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
-        + '/python/test/resources/wovodat_sample1.geocsv'
+    target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample1.geocsv'
     main.geocsvHandler.validate(target_url, g_verbose)
   def test4(self):
-    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
-        + '/python/test/resources/wovodat_sample2.geocsv'
+    target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample2.geocsv'
     main.geocsvHandler.validate(target_url, g_verbose)
   def test5(self):
-    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
-        + '/python/test/resources/wovodat_sample3.geocsv'
+    target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample3.geocsv'
     main.geocsvHandler.validate(target_url, g_verbose)
   def test6(self):
-    target_url = 'file:///Users/mike/c2_earthcube/0/GeoWS_code/geows-geocsv/src'\
-        + '/python/test/resources/wovodat_sample4.geocsv'
+    target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample4.geocsv'
+    main.geocsvHandler.validate(target_url, g_verbose)
+  def test7(self):
+    target_url = 'file://' + self.resource_path + '/' + 'R2R_sample1.geocsv'
+    main.geocsvHandler.validate(target_url, g_verbose)
+  def test8(self):
+    target_url = 'file://' + self.resource_path + '/' + 'UNAVCO_sample1.geocsv'
     main.geocsvHandler.validate(target_url, g_verbose)
 
 def run_test_suites(verbose):
@@ -64,8 +74,9 @@ def run_test_suites(verbose):
   suite.addTest(ExternalURLTests("test4"))
   suite.addTest(ExternalURLTests("test5"))
   suite.addTest(ExternalURLTests("test6"))
+  suite.addTest(ExternalURLTests("test7"))
+  suite.addTest(ExternalURLTests("test8"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)
-
 
