@@ -1,0 +1,7 @@
+# dataset: GeoCSV 2.0 
+# delimiter: |
+# comment: put in some null values
+vd_id|vd_name|vd_num|vd_cavw|lat|long|elevation
+||||||
+|
+||||||

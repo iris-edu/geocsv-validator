@@ -60,6 +60,9 @@ class ExternalURLTests(unittest.TestCase):
   def test8(self):
     target_url = 'file://' + self.resource_path + '/' + 'UNAVCO_sample1.geocsv'
     main.geocsvHandler.validate(target_url, g_verbose)
+  def test9(self):
+    target_url = 'file://' + self.resource_path + '/' + 'null_sample1.geocsv'
+    main.geocsvHandler.validate(target_url, g_verbose)
 
 def run_test_suites(verbose):
   global g_verbose
@@ -76,6 +79,7 @@ def run_test_suites(verbose):
   suite.addTest(ExternalURLTests("test6"))
   suite.addTest(ExternalURLTests("test7"))
   suite.addTest(ExternalURLTests("test8"))
+  suite.addTest(ExternalURLTests("test9"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)

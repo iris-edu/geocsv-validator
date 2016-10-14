@@ -4,6 +4,8 @@
 # delimiter: |
 
 # comment: runOption: showNumberFormatExceptions  all records in base data, check lat, long, and elevation
+#
+#
 vd_id|vd_name|vd_num|vd_cavw|lat|long|elevation
 212|Kutum Volc Field|225040|0205-04-|14.56999969|25.85000038| 
 1539|Thompson Island|386030|1806-03-|-53.93000031|5.5| 
