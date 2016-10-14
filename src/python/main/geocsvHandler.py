@@ -54,25 +54,29 @@ def get_response(url_string, verbose):
 def read_geocsv_lines(url_iter, geocobj, metrcs):
   try:
     rowStr = next(url_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
-    metrcs['totalLines'] = metrcs['totalLines'] + 1
-    geocobj['GClineCnt'] = geocobj['GClineCnt'] + 1
+    metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
+
     if len(rowStr) <= 0:
       # ignore zero length line
       metrcs['zeroLenCnt'] = metrcs['zeroLenCnt'] + 1
 
-      # keep reading, note: this will cause a stack overflow if there
+      # keep reading, note: will be a stack overflow for many null lines
       # are many null lines
       rowStr = read_geocsv_lines(url_iter, geocobj, metrcs)
 
     if rowStr[0:1] == '#':
+      # count any octothorp line as geocsv line until exiting at first non-octothorp
+      metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
+
       # do geocsv processing
       m = re.match(KEYWORD_REGEX, rowStr)
       if m == None:
-        metrcs['noKwInGCCnt'] = metrcs['noKwInGCCnt'] + 1
-        print("^^^^^^^^^ unexpected - no keyword, metrcs: ", metrcs, " l: ", len(rowStr), "  rowStr: ", rowStr)
+        metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
+        raise Exception("error no keyword, m: " + str(metrcs) + "  rowStr: " + rowStr)
       else:
         keyword = m.group(1).strip()
         if len(keyword) <= 0:
+          # poorly formed line, like #:, or # :
           print("^^^^^^^^^ unexpected - keyword is zero len, metrcs: ", metrcs, " l: ", len(rowStr), "  rowStr: ", rowStr)
           raise Exception("GeoCSV line parsed to a keyword of zero length")
         value = rowStr[len(m.group(0)):].strip()
@@ -87,11 +91,12 @@ def read_geocsv_lines(url_iter, geocobj, metrcs):
         else:
           geocobj['non_geocsv_obj'][keyword] = value
 
-      # keep reading
+      # keep reading as long as octothorp found
       rowStr = read_geocsv_lines(url_iter, geocobj, metrcs)
-
+    # if no octothorp, return out of the recursion and process rowStr
   except StopIteration:
     raise StopIteration
+
   return rowStr
 
 def handle_csv_row(rowStr, delimiter, metrcs, verbose):
@@ -124,18 +129,18 @@ def validate(url_string, verbose):
   # metrcs - geocsv metrics about geocsv content
   # octothorp - technical name for hash symbol
   # geocobj - short for geocsv
-  metrcs = {'totalLines': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
-    'preGCLineCnt': 0, 'afterGCLineCnt': 0, 'noKwInGCCnt': 0}
+  metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
+    'ignoreLineCnt': 0, 'geocsvLineCnt': 0}
 
   # geocsv object
-  geocobj = {'GCStart': False, 'GClineCnt': 0, 'delimiter': ',', 'non_geocsv_obj': {}}
+  geocobj = {'GCStart': False, 'delimiter': ',', 'non_geocsv_obj': {}}
 
   url_iter = response.readlines().__iter__()
   looping = True
   while looping:
     try:
       rowStr = next(url_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
-      metrcs['totalLines'] = metrcs['totalLines'] + 1
+      metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
 
       if len(rowStr) <= 0 :
         # ignore zero length line
@@ -149,10 +154,10 @@ def validate(url_string, verbose):
           mObj = re.match(GEOCSV_REQUIRED_START_REGEX, rowStr)
           if mObj == None:
             if geocobj['GCStart'] == False:
-              metrcs['preGCLineCnt'] = metrcs['preGCLineCnt'] + 1
+              metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
           else:
             geocobj['GCStart'] = True
-            geocobj['GClineCnt'] = geocobj['GClineCnt'] + 1
+            metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
 
             if verbose: print("&&&&&&&&& start of geocsv")
             rowStr = read_geocsv_lines(url_iter, geocobj, metrcs)
@@ -164,25 +169,38 @@ def validate(url_string, verbose):
           # ignore octothorp lines after reading geocsv lines
           if verbose: print("^^^^^^^^^ non-header octothorp rowStr: "\
               + rowStr.rstrip())
-          metrcs['afterGCLineCnt'] = metrcs['afterGCLineCnt'] + 1
+          metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
           continue
       else:
         # handle most non-geocsv for generic comment lines
         handle_csv_row(rowStr, geocobj['delimiter'], metrcs, verbose)
     except StopIteration:
-      print("** finished **")
+      if verbose: print("** geocsvHandler finished **")
       looping = False
+    except Exception:
+      print()
+      print("Error +++++++ metrcs: ", metrcs)
+      raise Exception("reraised it")
     finally:
       response.close()
 
   if verbose: print(">>> metrcs: ", metrcs)
-  if verbose: print(">>> geocobj: ", geocobj)
+  ##if verbose: print(">>> geocobj: ", geocobj)
+  if verbose:
+    for key in geocobj:
+      print(">>> key: ", key, "  val: ", geocobj[key])
+  ##print()
+  print(">>> metrcs: ", metrcs)
+  ##print(">>> geocobj: ", geocobj)
+
+  return
 
 if __name__ == "__main__" \
     or __name__ == "geocsvValidate" \
     or __name__ == "src.python.main.geocsvValidate":
-  print("len args: ", len(sys.argv))
-  if len(sys.argv) > 2:
+
+  print("geocsvHandler argv: ", sys.argv)
+  if len(sys.argv) > 1:
     url_string = sys.argv[1]
   else:
     url_string = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/query?format=text&showNumberFormatExceptions=true'
