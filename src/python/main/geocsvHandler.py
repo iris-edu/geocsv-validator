@@ -41,7 +41,7 @@ def get_response(url_string, argv_list):
   try:
     if 'verbose' in argv_list\
         or 'brief' in argv_list:
-      print("****** try: " + url_string)
+      print("****** try to open url_string: " + url_string)
     response = urlopen(url_string)
   except HTTPError as e:
     print(e.code)
@@ -211,10 +211,21 @@ if __name__ == "__main__" \
     or __name__ == "src.python.main.geocsvValidate":
 
   print("geocsvHandler argv: ", sys.argv)
-  if len(sys.argv) > 1:
-    url_string = sys.argv[1]
-  else:
-    url_string = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/query?format=text&showNumberFormatExceptions=true'
 
-  runvalidate(url_string)
+  default_url_string = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
+      + 'query?format=text&showNumberFormatExceptions=true'
+  url_string = ''
+  for item in sys.argv:
+    if item.find('http://') >= 0\
+        or item.find('file://') >= 0:
+      url_string = item
+      break
+
+  if len(url_string) <= 0:
+    print('****** warning, there is no http:// or file:// reference on the'
+        + ' command line list,')
+    print("****** using default url: ", default_url_string)
+    url_string = default_url_string
+
+  validate(url_string, sys.argv)
 
