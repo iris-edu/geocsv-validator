@@ -37,9 +37,11 @@ GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'field_unit',
     'attribution', 'standard_name_cv', 'title', 'history', 'institution',
     'source', 'comment', 'references'}
 
-def get_response(url_string, verbose):
+def get_response(url_string, argv_list):
   try:
-    if verbose: print("****** try: " + url_string)
+    if 'verbose' in argv_list\
+        or 'brief' in argv_list:
+      print("****** try: " + url_string)
     response = urlopen(url_string)
   except HTTPError as e:
     print(e.code)
@@ -47,11 +49,13 @@ def get_response(url_string, verbose):
     print("** failed on target: ", URL)
     sys.exit()
 
-  if verbose: print("****** waiting for reply ...")
+  if 'verbose' in argv_list\
+      or 'brief' in argv_list:
+    print("****** waiting for reply ...")
 
   return response
 
-def read_geocsv_lines(url_iter, geocobj, metrcs):
+def read_geocsv_lines(url_iter, GChdr, metrcs, argv_list):
   try:
     rowStr = next(url_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
     metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
@@ -62,24 +66,28 @@ def read_geocsv_lines(url_iter, geocobj, metrcs):
 
       # keep reading, note: will be a stack overflow for many null lines
       # are many null lines
-      rowStr = read_geocsv_lines(url_iter, geocobj, metrcs)
+      rowStr = read_geocsv_lines(url_iter, GChdr, metrcs, argv_list)
 
     if rowStr[0:1] == '#':
       # count any octothorp line as geocsv line until exiting at first non-octothorp
       metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
 
       # do geocsv processing
-      m = re.match(KEYWORD_REGEX, rowStr)
-      if m == None:
+      mObj = re.match(KEYWORD_REGEX, rowStr)
+      if mObj == None:
+        # no geocsv keyword form, count and ignore
         metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
-        raise Exception("error no keyword, m: " + str(metrcs) + "  rowStr: " + rowStr)
+        if 'octothorp' in argv_list:
+          print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
       else:
-        keyword = m.group(1).strip()
+        keyword = mObj.group(1).strip()
         if len(keyword) <= 0:
-          # poorly formed line, like #:, or # :
-          print("^^^^^^^^^ unexpected - keyword is zero len, metrcs: ", metrcs, " l: ", len(rowStr), "  rowStr: ", rowStr)
-          raise Exception("GeoCSV line parsed to a keyword of zero length")
-        value = rowStr[len(m.group(0)):].strip()
+          # poorly formed keyword, probably something like #:, or # :
+          # count and ignore
+          metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
+          if 'octothorp' in argv_list:
+            print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
+        value = rowStr[len(mObj.group(0)):].strip()
 
         if sys.version_info[0] < 3:
           # avoid using unicode strings when running python 2
@@ -87,19 +95,19 @@ def read_geocsv_lines(url_iter, geocobj, metrcs):
           value = value.encode('ascii')
 
         if keyword in GEOCSV_WELL_KNOWN_KEYWORDS:
-          geocobj[keyword] = value
+          GChdr[keyword] = value
         else:
-          geocobj['non_geocsv_obj'][keyword] = value
+          GChdr['other_keywords'][keyword] = value
 
       # keep reading as long as octothorp found
-      rowStr = read_geocsv_lines(url_iter, geocobj, metrcs)
+      rowStr = read_geocsv_lines(url_iter, GChdr, metrcs, argv_list)
     # if no octothorp, return out of the recursion and process rowStr
   except StopIteration:
     raise StopIteration
 
   return rowStr
 
-def handle_csv_row(rowStr, delimiter, metrcs, verbose):
+def handle_csv_row(rowStr, delimiter, metrcs, argv_list):
   # csv module interface is not setup to stream one line at a time,
   # so make a list of 1 row
   rowiter = iter(list([rowStr]))
@@ -107,7 +115,7 @@ def handle_csv_row(rowStr, delimiter, metrcs, verbose):
   csvreadr = csv.reader(rowiter, delimiter = delimiter)
   for row in csvreadr:
     metrcs['rowCnt'] = metrcs['rowCnt'] + 1
-    if verbose: print(metrcs, " l: ", len(row), "  row: ", row)
+    if 'verbose' in argv_list: print(metrcs, " l: ", len(row), "  row: ", row)
 
     if len(row) <= 0 :
       # not sure this can ever happen
@@ -115,11 +123,15 @@ def handle_csv_row(rowStr, delimiter, metrcs, verbose):
           + "  input rowStr: " + rowStr
       raise Exception(estr)
 
-def validate(url_string, verbose):
+def validate(url_string, argv_list):
   # put newline to separate from unit test "dot"
-  if verbose: print()
+  if 'verbose' in argv_list\
+      or 'brief' in argv_list\
+      or 'metrics' in argv_list\
+      or 'octothorp' in argv_list:
+    print()
 
-  response = get_response(url_string, verbose)
+  response = get_response(url_string, argv_list)
 
   # dump response
   ##text = response.read()
@@ -128,12 +140,12 @@ def validate(url_string, verbose):
   # capture metrics about content
   # metrcs - geocsv metrics about geocsv content
   # octothorp - technical name for hash symbol
-  # geocobj - short for geocsv
+  # GChdr - short for geocsv
   metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
     'ignoreLineCnt': 0, 'geocsvLineCnt': 0}
 
   # geocsv object
-  geocobj = {'GCStart': False, 'delimiter': ',', 'non_geocsv_obj': {}}
+  GChdr = {'GCStart': False, 'delimiter': ',', 'other_keywords': {}}
 
   url_iter = response.readlines().__iter__()
   looping = True
@@ -150,48 +162,47 @@ def validate(url_string, verbose):
       if rowStr[0:1] == '#':
         # ignore octothorp lines until start of geocsv, then read
         # until first non-octothorp line
-        if geocobj['GCStart'] == False:
+        if GChdr['GCStart'] == False:
           mObj = re.match(GEOCSV_REQUIRED_START_REGEX, rowStr)
           if mObj == None:
-            if geocobj['GCStart'] == False:
+            if GChdr['GCStart'] == False:
               metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
+              if 'octothorp' in argv_list:
+                print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
           else:
-            geocobj['GCStart'] = True
+            GChdr['GCStart'] = True
             metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
 
-            if verbose: print("&&&&&&&&& start of geocsv")
-            rowStr = read_geocsv_lines(url_iter, geocobj, metrcs)
-            if verbose: print("@@@@@@@@@ geocobj: ", geocobj)
+            rowStr = read_geocsv_lines(url_iter, GChdr, metrcs, argv_list)
+            if 'verbose' in argv_list: print("****** geocsv header finished: ", metrcs)
 
             # handle first non-geocsv line after finished reading geocsv lines
-            handle_csv_row(rowStr, geocobj['delimiter'], metrcs, verbose)
+            handle_csv_row(rowStr, GChdr['delimiter'], metrcs, argv_list)
         else:
           # ignore octothorp lines after reading geocsv lines
-          if verbose: print("^^^^^^^^^ non-header octothorp rowStr: "\
-              + rowStr.rstrip())
           metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
+          if 'octothorp' in argv_list:
+            print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
           continue
       else:
         # handle most non-geocsv for generic comment lines
-        handle_csv_row(rowStr, geocobj['delimiter'], metrcs, verbose)
+        handle_csv_row(rowStr, GChdr['delimiter'], metrcs, argv_list)
     except StopIteration:
-      if verbose: print("** geocsvHandler finished **")
+      if 'verbose' in argv_list: print("** geocsvHandler finished **")
       looping = False
-    except Exception:
-      print()
-      print("Error +++++++ metrcs: ", metrcs)
-      raise Exception("reraised it")
     finally:
       response.close()
 
-  if verbose: print(">>> metrcs: ", metrcs)
-  ##if verbose: print(">>> geocobj: ", geocobj)
-  if verbose:
-    for key in geocobj:
-      print(">>> key: ", key, "  val: ", geocobj[key])
-  ##print()
-  print(">>> metrcs: ", metrcs)
-  ##print(">>> geocobj: ", geocobj)
+  if 'verbose' in argv_list:
+    print(">>> metrcs: ", metrcs)
+    print(">>> geocvs hdr: ", GChdr)
+
+  if 'brief' in argv_list:
+    print(">>> metrcs: ", metrcs)
+    print(">>> geocvs hdr: ", GChdr) 
+
+  if 'metrics' in argv_list:
+    print(">>> metrcs: ", metrcs)
 
   return
 

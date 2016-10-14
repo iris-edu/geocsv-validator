@@ -19,11 +19,6 @@ print("-------------------------------------------")
 
 print("** start, context name: " + __name__ + "  argv: ", sys.argv)
 
-verbose = False
-if len(sys.argv) > 1:
-  if sys.argv[1] == 'True' or sys.argv[1] == 'true' or sys.argv[1] == '1':
-    verbose = True
-
-test.handler_tests.run_test_suites(verbose)
+test.handler_tests.run_test_suites(sys.argv)
 
 print("** end, context name: " + __name__)

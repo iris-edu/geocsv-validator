@@ -15,7 +15,7 @@ import os
 import unittest
 import main.geocsvHandler
 
-g_verbose = False
+g_argv_list = False
 
 class ExternalURLTests(unittest.TestCase):
   def setUp(self):
@@ -31,7 +31,7 @@ class ExternalURLTests(unittest.TestCase):
   def test1(self):
     target_url = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
         + 'query?format=text&showNumberFormatExceptions=true'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
   def test2(self):
     target_url = 'http://geows.ds.iris.edu/geows-uf/intermagnet/1/'\
         + 'query?email=geows@iris.washington.edu&accept=true&content=files'\
@@ -39,34 +39,34 @@ class ExternalURLTests(unittest.TestCase):
         + '&regions=America,Asia,Europe,Pacific,Africa'\
         + '&latitudes=NH,NM,E,SM,SH&observatories=AAA,BEL,CKI,DED,EBR,FCC,GAN'\
         + '&type=best&rate=minute'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
 
   # files from test area
   def test3(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample1.geocsv'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
   def test4(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample2.geocsv'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
   def test5(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample3.geocsv'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
   def test6(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample4.geocsv'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
   def test7(self):
     target_url = 'file://' + self.resource_path + '/' + 'R2R_sample1.geocsv'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
   def test8(self):
     target_url = 'file://' + self.resource_path + '/' + 'UNAVCO_sample1.geocsv'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
   def test9(self):
     target_url = 'file://' + self.resource_path + '/' + 'null_sample1.geocsv'
-    main.geocsvHandler.validate(target_url, g_verbose)
+    main.geocsvHandler.validate(target_url, g_argv_list)
 
-def run_test_suites(verbose):
-  global g_verbose
-  g_verbose = verbose
+def run_test_suites(argv_list):
+  global g_argv_list
+  g_argv_list = argv_list
 
   print ("**** run_test_suites context name: ", __name__)
 
