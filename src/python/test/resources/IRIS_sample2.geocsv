@@ -1,0 +1,7 @@
+# dataset: GeoCSV 2.0
+# delimiter: |
+# field_unit: ASCII | ASCII | degrees_north | degrees_east | meters| ASCII| UTC| UTC 
+# field_type: string | string | float | float | float | string | datetime | datetime 
+Network|Station|Latitude|Longitude|Elevation|SiteName|StartTime|EndTime 
+IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1989-08-29T00:00:00|1995-07-14T00:00:00
+IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1995-07-14T00:00:00|2000-10-19T16:00:00

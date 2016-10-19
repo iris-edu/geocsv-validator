@@ -25,11 +25,11 @@ class ExternalURLTests(unittest.TestCase):
 ##    self.t1 = None
 
   # some live URLs
-  def test1(self):
+  def test01(self):
     target_url = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
         + 'query?format=text&showNumberFormatExceptions=true'
     main.geocsvHandler.validate(target_url, g_argv_list)
-  def test2(self):
+  def test02(self):
     target_url = 'http://geows.ds.iris.edu/geows-uf/intermagnet/1/'\
         + 'query?email=geows@iris.washington.edu&accept=true&content=files'\
         + '&format=text&starttime=2014-10-30&endtime=2014-11-01'\
@@ -39,26 +39,32 @@ class ExternalURLTests(unittest.TestCase):
     main.geocsvHandler.validate(target_url, g_argv_list)
 
   # files from test area
-  def test3(self):
+  def test03(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample1.geocsv'
     main.geocsvHandler.validate(target_url, g_argv_list)
-  def test4(self):
+  def test04(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample2.geocsv'
     main.geocsvHandler.validate(target_url, g_argv_list)
-  def test5(self):
+  def test05(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample3.geocsv'
     main.geocsvHandler.validate(target_url, g_argv_list)
-  def test6(self):
+  def test06(self):
     target_url = 'file://' + self.resource_path + '/' + 'wovodat_sample4.geocsv'
     main.geocsvHandler.validate(target_url, g_argv_list)
-  def test7(self):
+  def test07(self):
     target_url = 'file://' + self.resource_path + '/' + 'R2R_sample1.geocsv'
     main.geocsvHandler.validate(target_url, g_argv_list)
-  def test8(self):
+  def test08(self):
     target_url = 'file://' + self.resource_path + '/' + 'UNAVCO_sample1.geocsv'
     main.geocsvHandler.validate(target_url, g_argv_list)
-  def test9(self):
+  def test09(self):
     target_url = 'file://' + self.resource_path + '/' + 'null_sample1.geocsv'
+    main.geocsvHandler.validate(target_url, g_argv_list)
+  def test10(self):
+    target_url = 'file://' + self.resource_path + '/' + 'IRIS_sample1.geocsv'
+    main.geocsvHandler.validate(target_url, g_argv_list)
+  def test11(self):
+    target_url = 'file://' + self.resource_path + '/' + 'IRIS_sample2.geocsv'
     main.geocsvHandler.validate(target_url, g_argv_list)
 
 def run_test_suites(argv_list):
@@ -68,15 +74,17 @@ def run_test_suites(argv_list):
   print ("**** run_test_suites context name: ", __name__)
 
   suite = unittest.TestSuite()
-  suite.addTest(ExternalURLTests("test2"))
-  suite.addTest(ExternalURLTests("test1"))
-  suite.addTest(ExternalURLTests("test3"))
-  suite.addTest(ExternalURLTests("test4"))
-  suite.addTest(ExternalURLTests("test5"))
-  suite.addTest(ExternalURLTests("test6"))
-  suite.addTest(ExternalURLTests("test7"))
-  suite.addTest(ExternalURLTests("test8"))
-  suite.addTest(ExternalURLTests("test9"))
+  suite.addTest(ExternalURLTests("test02"))
+  suite.addTest(ExternalURLTests("test01"))
+  suite.addTest(ExternalURLTests("test03"))
+  suite.addTest(ExternalURLTests("test04"))
+  suite.addTest(ExternalURLTests("test05"))
+  suite.addTest(ExternalURLTests("test06"))
+  suite.addTest(ExternalURLTests("test07"))
+  suite.addTest(ExternalURLTests("test08"))
+  suite.addTest(ExternalURLTests("test09"))
+  suite.addTest(ExternalURLTests("test10"))
+  suite.addTest(ExternalURLTests("test11"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)

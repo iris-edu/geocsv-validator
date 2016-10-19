@@ -29,10 +29,12 @@ KEYWORD_REGEX = '^# *(.+?):'
 
 GEOCSV_REQUIRED_START_REGEX = '^# *dataset *: *GeoCSV 2.0'
 
-GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'field_unit',
-    'field_type', 'field_long_name', 'field_standard_name', 'field_missing',
-    'attribution', 'standard_name_cv', 'title', 'history', 'institution',
-    'source', 'comment', 'references'}
+GEOCSV_COLUMN_VALUED_KEYWORDS = {'field_unit', 'field_type',
+   'field_long_name', 'field_standard_name', 'field_missing'}
+
+GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
+    'standard_name_cv', 'title', 'history', 'institution', 'source',
+    'comment', 'references'}.union(GEOCSV_COLUMN_VALUED_KEYWORDS)
 
 def get_response(url_string, argv_list):
   try:
@@ -112,7 +114,8 @@ def handle_csv_row(rowStr, delimiter, metrcs, argv_list):
   csvreadr = csv.reader(rowiter, delimiter = delimiter)
   for row in csvreadr:
     metrcs['rowCnt'] = metrcs['rowCnt'] + 1
-    if 'verbose' in argv_list: print(metrcs, " l: ", len(row), "  row: ", row)
+    metrcs['rowLengths'].add(len(row))
+    if 'verbose' in argv_list: print(metrcs, "  row: ", row)
 
     if len(row) <= 0 :
       # not sure this can ever happen
@@ -128,7 +131,12 @@ def validate(url_string, argv_list):
       or 'octothorp' in argv_list:
     print()
 
+  # geocsv object
+  GChdr = {'GCStart': False, 'delimiter': ',', 'other_keywords': {}}
+
   response = get_response(url_string, argv_list)
+
+  GChdr['url_string'] = url_string
 
   # dump response
   ##text = response.read()
@@ -139,10 +147,7 @@ def validate(url_string, argv_list):
   # octothorp - technical name for hash symbol
   # GChdr - short for geocsv
   metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
-    'ignoreLineCnt': 0, 'geocsvLineCnt': 0}
-
-  # geocsv object
-  GChdr = {'GCStart': False, 'delimiter': ',', 'other_keywords': {}}
+    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'rowLengths': set()}
 
   url_iter = response.readlines().__iter__()
   looping = True
@@ -201,7 +206,31 @@ def validate(url_string, argv_list):
   if 'metrics' in argv_list:
     print(">>> metrcs: ", metrcs)
 
+  check_geocsv_fields(GChdr)
+
   return
+
+def check_geocsv_fields(GChdr):
+  warnings = {}
+  errors = {}
+
+  if (not GChdr['GCStart']):
+    warnings['gcstart'] = 'geocsv start line not found, no geocsv information'
+    print("--------- WARNING: ", warnings)
+    print("--------- WARNING geocvs hdr: ", GChdr)
+
+  number_of_columns = set()
+  for fldname in GEOCSV_COLUMN_VALUED_KEYWORDS:
+    if fldname in GChdr:
+      rowiter = iter(list([GChdr[fldname]]))
+
+      csvreadr = csv.reader(rowiter, delimiter = GChdr['delimiter'])
+      for row in csvreadr:
+        number_of_columns.add(len(row))
+  if len(number_of_columns) > 1:
+    print("--------- ERROR, number of columns not the same, set: ",
+        number_of_columns)
+    print("--------- ERROR geocvs hdr: ", GChdr)
 
 if __name__ == "__main__" \
     or __name__ == "geocsvValidate" \
