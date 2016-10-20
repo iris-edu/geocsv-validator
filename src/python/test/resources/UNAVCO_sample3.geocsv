@@ -1,0 +1,15 @@
+# dataset: GeoCSV 2.0
+# field_unit: UTF-8, UTF-8, degrees_north, degrees_east, meters, UTC, UTC
+# field_type: string, string, float, float, float, datetime, datetime
+# attribution: http://www.unavco.org/community/policies_forms/attribution/attribution.html
+# GeodeticDatum: ITRF2008 epsg:1061
+# Ellipsoid: GRS 1980 epsg:7019
+# Ellipsoidal Coordinate System: EllipsoidalCS epsg:6423
+# Axes: Geodetic longitude, Geodetic latitude, Ellipsoidal height. Orientations:east, north, up.
+# Units of Measure: decimal degrees, decimal degrees, meters
+ID,station_name,latitude,longitude,ellip_height,session_start_time
+ASBU,Astronaut Butte,43.8206,-121.3685,1234,2011-08-18T00:00:00
+CIHL,Cinder Hill,43.7509,-121.1487,4567,2011-09-13T16:04:30
+CPCO,Central Pumice Cone,43.7221,-121.2332,4321,2011-08-18T00:00:00
+CPCO,Central Pumice Cone,43.7221,-121.2332,222,2012-06-14T00:00:00
+CPCO,Central Pumice Cone,43.7221,-121.2332,999,2012-09-26T19:28:45

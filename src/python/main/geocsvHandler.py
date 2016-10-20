@@ -18,6 +18,7 @@ from urllib.error import HTTPError
 import sys
 import csv
 import re
+import pprint
 
 MY_LINE_BREAK_CHARS = '\n\r'
 
@@ -111,7 +112,7 @@ def handle_csv_row(rowStr, delimiter, metrcs, argv_list):
   csvreadr = csv.reader(rowiter, delimiter = delimiter)
   for row in csvreadr:
     metrcs['rowCnt'] = metrcs['rowCnt'] + 1
-    metrcs['fieldsCnt'].add(len(row))
+    metrcs['dataFieldsCntSet'].add(len(row))
     if 'verbose' in argv_list: print(metrcs, "  row: ", row)
 
     if len(row) <= 0 :
@@ -144,7 +145,7 @@ def validate(url_string, argv_list):
   # octothorp - technical name for hash symbol
   # gecsv - content related to geocsv
   metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
-    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'fieldsCnt': set()}
+    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'dataFieldsCntSet': set()}
 
   url_iter = response.readlines().__iter__()
   looping = True
@@ -200,38 +201,59 @@ def validate(url_string, argv_list):
     print(">>> geocvs hdr: ", gecsv) 
 
   if 'metrics' in argv_list:
+    print(">>> metrcs, url: ", gecsv['url_string'])
     print(">>> metrcs: ", metrcs)
 
   check_geocsv_fields(metrcs, gecsv)
 
   return
 
+def printLead(metrcs, gecsv):
+      print()
+      print("--------- url: ", gecsv['url_string'])
+      print("--------- metrics: ", metrcs)
+
 def check_geocsv_fields(metrcs, gecsv):
-  warnings = {}
-  errors = {}
+  pp = pprint.PrettyPrinter(indent=2,width=120)
+  errPrintCnt = 0
 
   if (not gecsv['GCStart']):
-    warnings['gcstart'] = 'geocsv start line not found, no geocsv information'
-    print("--------- WARNING: ", warnings)
-    print("--------- WARNING geocvs hdr: ", gecsv)
+    errPrintCnt = errPrintCnt + 1
+    if errPrintCnt == 1: printLead(metrcs, gecsv)
+    print("--------- WARNING, geocsv start line not found, no geocsv information")
+    pp.pprint(gecsv)
 
-  fldCnt = set()
-  for fldname in GEOCSV_COLUMN_VALUED_KEYWORDS:
-    if fldname in gecsv:
-      rowiter = iter(list([gecsv[fldname]]))
+  fldDict = {}
+  gecsvFieldCntSet = set()
+  fldSet = GEOCSV_COLUMN_VALUED_KEYWORDS.intersection(set(gecsv.keys()))
+  for fldname in fldSet:
+    rowiter = iter(list([gecsv[fldname]]))
 
-      csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
-      for row in csvreadr:
-        fldCnt.add(len(row))
+    csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
+    for row in csvreadr:
+      ##fldDict[fldname] = "len: " + str(len(row)) + "  val: " + gecsv[fldname]
+      fldDict[fldname] = gecsv[fldname]
+      fldDict[fldname + "_len"] = len(row)
+      gecsvFieldCntSet.add(len(row))
 
-  if len(fldCnt) > 1:
-    print("--------- ERROR, geocsv fields inconsistent between one or more: ", GEOCSV_COLUMN_VALUED_KEYWORDS)
-    print("--------- ERROR, geocsv fields count: ", fldCnt)
-    print("--------- ERROR geocvs hdr: ", gecsv)
+  if len(gecsvFieldCntSet) > 1:
+    errPrintCnt = errPrintCnt + 1
+    if errPrintCnt == 1: printLead(metrcs, gecsv)
+    print("--------- ERROR, geocsv, one or more inconsistent field counts")
+    pp.pprint(fldDict)
 
-  if len(metrcs['fieldsCnt']) > 1:
-    print("--------- ERROR, data fields inconsistent, counts: ", metrcs['fieldsCnt'])
-    print("--------- ERROR geocvs hdr: ", gecsv)
+  if len(metrcs['dataFieldsCntSet']) > 1:
+    errPrintCnt = errPrintCnt + 1
+    if errPrintCnt == 1: printLead(metrcs, gecsv)
+    print("--------- ERROR, the field count in data rows is inconsistent, counts: ", metrcs['dataFieldsCntSet'])
+    pp.pprint(gecsv)
+
+  if len(metrcs['dataFieldsCntSet'].union(gecsvFieldCntSet)) >\
+      max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
+    errPrintCnt = errPrintCnt + 1
+    if errPrintCnt == 1: printLead(metrcs, gecsv)
+    print("--------- ERROR, data fields in row count inconsistent with geocsv fields, datacounts: ", metrcs['dataFieldsCntSet'])
+    pp.pprint(fldDict)
 
 if __name__ == "__main__" \
     or __name__ == "geocsvValidate" \
