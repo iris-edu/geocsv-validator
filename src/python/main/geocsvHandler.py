@@ -114,7 +114,7 @@ def handle_csv_row(rowStr, delimiter, metrcs, argv_list):
   csvreadr = csv.reader(rowiter, delimiter = delimiter)
   for row in csvreadr:
     metrcs['rowCnt'] = metrcs['rowCnt'] + 1
-    metrcs['rowLengths'].add(len(row))
+    metrcs['fieldsCnt'].add(len(row))
     if 'verbose' in argv_list: print(metrcs, "  row: ", row)
 
     if len(row) <= 0 :
@@ -143,11 +143,11 @@ def validate(url_string, argv_list):
   ##print ("**** text: " + text)
 
   # capture metrics about content
-  # metrcs - geocsv metrics about geocsv content
+  # metrcs - metrics about file and data content
   # octothorp - technical name for hash symbol
-  # GChdr - short for geocsv
+  # GChdr - content of geocsv header
   metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
-    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'rowLengths': set()}
+    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'fieldsCnt': set()}
 
   url_iter = response.readlines().__iter__()
   looping = True
@@ -206,11 +206,11 @@ def validate(url_string, argv_list):
   if 'metrics' in argv_list:
     print(">>> metrcs: ", metrcs)
 
-  check_geocsv_fields(GChdr)
+  check_geocsv_fields(metrcs, GChdr)
 
   return
 
-def check_geocsv_fields(GChdr):
+def check_geocsv_fields(metrcs, GChdr):
   warnings = {}
   errors = {}
 
@@ -219,17 +219,22 @@ def check_geocsv_fields(GChdr):
     print("--------- WARNING: ", warnings)
     print("--------- WARNING geocvs hdr: ", GChdr)
 
-  number_of_columns = set()
+  fldCnt = set()
   for fldname in GEOCSV_COLUMN_VALUED_KEYWORDS:
     if fldname in GChdr:
       rowiter = iter(list([GChdr[fldname]]))
 
       csvreadr = csv.reader(rowiter, delimiter = GChdr['delimiter'])
       for row in csvreadr:
-        number_of_columns.add(len(row))
-  if len(number_of_columns) > 1:
-    print("--------- ERROR, number of columns not the same, set: ",
-        number_of_columns)
+        fldCnt.add(len(row))
+
+  if len(fldCnt) > 1:
+    print("--------- ERROR, geocsv fields inconsistent between one or more: ", GEOCSV_COLUMN_VALUED_KEYWORDS)
+    print("--------- ERROR, geocsv fields count: ", fldCnt)
+    print("--------- ERROR geocvs hdr: ", GChdr)
+
+  if len(metrcs['fieldsCnt']) > 1:
+    print("--------- ERROR, data fields inconsistent, counts: ", metrcs['fieldsCnt'])
     print("--------- ERROR geocvs hdr: ", GChdr)
 
 if __name__ == "__main__" \
