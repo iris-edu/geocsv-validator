@@ -36,11 +36,13 @@ GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
     'standard_name_cv', 'title', 'history', 'institution', 'source',
     'comment', 'references'}.union(GEOCSV_COLUMN_VALUED_KEYWORDS)
 
+def report_response_stage(argv_list, repStr):
+  if 'verbose' in argv_list or 'brief' in argv_list:
+    print(repStr)
+
 def get_response(url_string, argv_list):
   try:
-    if 'verbose' in argv_list\
-        or 'brief' in argv_list:
-      print("****** try to open url_string: " + url_string)
+    report_response_stage(argv_list, "****** opening url: " + url_string)
     response = urlopen(url_string)
   except HTTPError as e:
     print(e.code)
@@ -48,13 +50,10 @@ def get_response(url_string, argv_list):
     print("** failed on target: ", URL)
     sys.exit()
 
-  if 'verbose' in argv_list\
-      or 'brief' in argv_list:
-    print("****** waiting for reply ...")
-
+  report_response_stage(argv_list, "****** waiting for reply ...")
   return response
 
-def read_geocsv_lines(url_iter, GChdr, metrcs, argv_list):
+def read_geocsv_lines(url_iter, gecsv, metrcs, argv_list):
   try:
     rowStr = next(url_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
     metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
@@ -63,9 +62,8 @@ def read_geocsv_lines(url_iter, GChdr, metrcs, argv_list):
       # ignore zero length line
       metrcs['zeroLenCnt'] = metrcs['zeroLenCnt'] + 1
 
-      # keep reading, note: will be a stack overflow for many null lines
-      # are many null lines
-      rowStr = read_geocsv_lines(url_iter, GChdr, metrcs, argv_list)
+      # keep reading, note: potential for stack overflow if many null lines
+      rowStr = read_geocsv_lines(url_iter, gecsv, metrcs, argv_list)
 
     if rowStr[0:1] == '#':
       # count any octothorp line as geocsv line until exiting at first non-octothorp
@@ -76,16 +74,15 @@ def read_geocsv_lines(url_iter, GChdr, metrcs, argv_list):
       if mObj == None:
         # no geocsv keyword form, count and ignore
         metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
-        if 'octothorp' in argv_list:
-          print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
+        report_octothorp(argv_list, metrcs, rowStr)
       else:
         keyword = mObj.group(1).strip()
         if len(keyword) <= 0:
           # poorly formed keyword, probably something like #:, or # :
           # count and ignore
           metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
-          if 'octothorp' in argv_list:
-            print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
+          report_octothorp(argv_list, metrcs, rowStr)
+
         value = rowStr[len(mObj.group(0)):].strip()
 
         if sys.version_info[0] < 3:
@@ -94,12 +91,12 @@ def read_geocsv_lines(url_iter, GChdr, metrcs, argv_list):
           value = value.encode('ascii')
 
         if keyword in GEOCSV_WELL_KNOWN_KEYWORDS:
-          GChdr[keyword] = value
+          gecsv[keyword] = value
         else:
-          GChdr['other_keywords'][keyword] = value
+          gecsv['other_keywords'][keyword] = value
 
       # keep reading as long as octothorp found
-      rowStr = read_geocsv_lines(url_iter, GChdr, metrcs, argv_list)
+      rowStr = read_geocsv_lines(url_iter, gecsv, metrcs, argv_list)
     # if no octothorp, return out of the recursion and process rowStr
   except StopIteration:
     raise StopIteration
@@ -119,12 +116,16 @@ def handle_csv_row(rowStr, delimiter, metrcs, argv_list):
 
     if len(row) <= 0 :
       # not sure this can ever happen
-      estr = "Error, zero columns from csv procession, metrcs: " + str(metrcs)\
+      eStr = "Error, zero columns from csv procession, metrcs: " + str(metrcs)\
           + "  input rowStr: " + rowStr
-      raise Exception(estr)
+      raise Exception(eStr)
+
+def report_octothorp(argv_list, metrcs, rowStr):
+  if 'octothorp' in argv_list:
+    print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
 
 def validate(url_string, argv_list):
-  # put newline to separate from unit test "dot"
+  # put newline to improve readability when reporting, before unit test "dot"
   if 'verbose' in argv_list\
       or 'brief' in argv_list\
       or 'metrics' in argv_list\
@@ -132,20 +133,16 @@ def validate(url_string, argv_list):
     print()
 
   # geocsv object
-  GChdr = {'GCStart': False, 'delimiter': ',', 'other_keywords': {}}
+  gecsv = {'GCStart': False, 'delimiter': ',', 'other_keywords': {}}
 
   response = get_response(url_string, argv_list)
 
-  GChdr['url_string'] = url_string
-
-  # dump response
-  ##text = response.read()
-  ##print ("**** text: " + text)
+  gecsv['url_string'] = url_string
 
   # capture metrics about content
   # metrcs - metrics about file and data content
   # octothorp - technical name for hash symbol
-  # GChdr - content of geocsv header
+  # gecsv - content related to geocsv
   metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
     'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'fieldsCnt': set()}
 
@@ -164,31 +161,30 @@ def validate(url_string, argv_list):
       if rowStr[0:1] == '#':
         # ignore octothorp lines until start of geocsv, then read
         # until first non-octothorp line
-        if GChdr['GCStart'] == False:
+        if gecsv['GCStart'] == False:
           mObj = re.match(GEOCSV_REQUIRED_START_REGEX, rowStr)
           if mObj == None:
-            if GChdr['GCStart'] == False:
+            if gecsv['GCStart'] == False:
               metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
-              if 'octothorp' in argv_list:
-                print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
+              report_octothorp(argv_list, metrcs, rowStr)
+
           else:
-            GChdr['GCStart'] = True
+            gecsv['GCStart'] = True
             metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
 
-            rowStr = read_geocsv_lines(url_iter, GChdr, metrcs, argv_list)
+            rowStr = read_geocsv_lines(url_iter, gecsv, metrcs, argv_list)
             if 'verbose' in argv_list: print("****** geocsv header finished: ", metrcs)
 
             # handle first non-geocsv line after finished reading geocsv lines
-            handle_csv_row(rowStr, GChdr['delimiter'], metrcs, argv_list)
+            handle_csv_row(rowStr, gecsv['delimiter'], metrcs, argv_list)
         else:
           # ignore octothorp lines after reading geocsv lines
           metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
-          if 'octothorp' in argv_list:
-            print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
+          report_octothorp(argv_list, metrcs, rowStr)
           continue
       else:
         # handle most non-geocsv for generic comment lines
-        handle_csv_row(rowStr, GChdr['delimiter'], metrcs, argv_list)
+        handle_csv_row(rowStr, gecsv['delimiter'], metrcs, argv_list)
     except StopIteration:
       if 'verbose' in argv_list: print("** geocsvHandler finished **")
       looping = False
@@ -197,45 +193,45 @@ def validate(url_string, argv_list):
 
   if 'verbose' in argv_list:
     print(">>> metrcs: ", metrcs)
-    print(">>> geocvs hdr: ", GChdr)
+    print(">>> geocvs hdr: ", gecsv)
 
   if 'brief' in argv_list:
     print(">>> metrcs: ", metrcs)
-    print(">>> geocvs hdr: ", GChdr) 
+    print(">>> geocvs hdr: ", gecsv) 
 
   if 'metrics' in argv_list:
     print(">>> metrcs: ", metrcs)
 
-  check_geocsv_fields(metrcs, GChdr)
+  check_geocsv_fields(metrcs, gecsv)
 
   return
 
-def check_geocsv_fields(metrcs, GChdr):
+def check_geocsv_fields(metrcs, gecsv):
   warnings = {}
   errors = {}
 
-  if (not GChdr['GCStart']):
+  if (not gecsv['GCStart']):
     warnings['gcstart'] = 'geocsv start line not found, no geocsv information'
     print("--------- WARNING: ", warnings)
-    print("--------- WARNING geocvs hdr: ", GChdr)
+    print("--------- WARNING geocvs hdr: ", gecsv)
 
   fldCnt = set()
   for fldname in GEOCSV_COLUMN_VALUED_KEYWORDS:
-    if fldname in GChdr:
-      rowiter = iter(list([GChdr[fldname]]))
+    if fldname in gecsv:
+      rowiter = iter(list([gecsv[fldname]]))
 
-      csvreadr = csv.reader(rowiter, delimiter = GChdr['delimiter'])
+      csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
       for row in csvreadr:
         fldCnt.add(len(row))
 
   if len(fldCnt) > 1:
     print("--------- ERROR, geocsv fields inconsistent between one or more: ", GEOCSV_COLUMN_VALUED_KEYWORDS)
     print("--------- ERROR, geocsv fields count: ", fldCnt)
-    print("--------- ERROR geocvs hdr: ", GChdr)
+    print("--------- ERROR geocvs hdr: ", gecsv)
 
   if len(metrcs['fieldsCnt']) > 1:
     print("--------- ERROR, data fields inconsistent, counts: ", metrcs['fieldsCnt'])
-    print("--------- ERROR geocvs hdr: ", GChdr)
+    print("--------- ERROR geocvs hdr: ", gecsv)
 
 if __name__ == "__main__" \
     or __name__ == "geocsvValidate" \
