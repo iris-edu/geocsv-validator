@@ -252,6 +252,15 @@ def check_geocsv_fields(metrcs, gecsv):
         + str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + str(gecsvFieldCntSet)
     showThisFldDict = True
 
+  # check for field size of one, implying missing or wrong delimiter
+  if 1 in metrcs['dataFieldsCntSet'] or 1 in gecsvFieldCntSet:
+    report['GeoCSV-validated'] = False
+    report['order'].append('field_size_1_warning')
+    report['field_size_1_warning'] =\
+        'WARNING, geocsv field size or data row size of one, possible problem with delimiter, data row sizes: '\
+        + str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + str(gecsvFieldCntSet)
+    showThisFldDict = True
+
   if showThisFldDict:
     report['order'].append('geocsv_field_sizes')
     report['geocsv_field_sizes'] = thisFldDict
