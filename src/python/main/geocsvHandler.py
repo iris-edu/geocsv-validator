@@ -29,6 +29,7 @@ MY_LINE_BREAK_CHARS = '\n\r'
 KEYWORD_REGEX = '^# *(.+?):'
 
 GEOCSV_REQUIRED_START_REGEX = '^# *dataset *: *GeoCSV 2.0'
+GEOCSV_REQUIRED_START_LITERAL = '# dataset: GeoCSV 2.0'
 
 GEOCSV_COLUMN_VALUED_KEYWORDS = {'field_unit', 'field_type',
    'field_long_name', 'field_standard_name', 'field_missing'}
@@ -37,21 +38,17 @@ GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
     'standard_name_cv', 'title', 'history', 'institution', 'source',
     'comment', 'references'}.union(GEOCSV_COLUMN_VALUED_KEYWORDS)
 
-def report_response_stage(argv_list, repStr):
-  if 'verbose' in argv_list or 'brief' in argv_list:
-    print(repStr)
-
 def get_response(url_string, argv_list):
   try:
-    report_response_stage(argv_list, "****** opening url: " + url_string)
+    if 'verbose' in argv_list: print("******* opening url: " + url_string)
     response = urlopen(url_string)
   except HTTPError as e:
     print(e.code)
     print(e.read())
-    print("** failed on target: ", URL)
+    print("******* failed on target: ", URL)
     sys.exit()
 
-  report_response_stage(argv_list, "****** waiting for reply ...")
+  if 'verbose' in argv_list: print("******* waiting for reply ...")
   return response
 
 def read_geocsv_lines(url_iter, gecsv, metrcs, argv_list):
@@ -126,12 +123,8 @@ def report_octothorp(argv_list, metrcs, rowStr):
     print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
 
 def validate(url_string, argv_list):
-  # put newline to improve readability when reporting, before unit test "dot"
-  if 'verbose' in argv_list\
-      or 'brief' in argv_list\
-      or 'metrics' in argv_list\
-      or 'octothorp' in argv_list:
-    print()
+  # put newline to improve readability for unit test when not in test mode
+  if not 'test_mode' in argv_list: print()
 
   # geocsv object
   gecsv = {'GCStart': False, 'delimiter': ',', 'other_keywords': {}}
@@ -174,7 +167,9 @@ def validate(url_string, argv_list):
             metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
 
             rowStr = read_geocsv_lines(url_iter, gecsv, metrcs, argv_list)
-            if 'verbose' in argv_list: print("****** geocsv header finished: ", metrcs)
+            if 'verbose' in argv_list:
+              print("******* geocsv header finished, metrics: ", metrcs)
+              print("******* geocsv header finished, GeoCSV: ", gecsv)
 
             # handle first non-geocsv line after finished reading geocsv lines
             handle_csv_row(rowStr, gecsv['delimiter'], metrcs, argv_list)
@@ -187,73 +182,81 @@ def validate(url_string, argv_list):
         # handle most non-geocsv for generic comment lines
         handle_csv_row(rowStr, gecsv['delimiter'], metrcs, argv_list)
     except StopIteration:
-      if 'verbose' in argv_list: print("** geocsvHandler finished **")
+      if 'verbose' in argv_list: print("******* geocsvHandler finished *******")
       looping = False
     finally:
       response.close()
 
-  if 'verbose' in argv_list:
-    print(">>> metrcs: ", metrcs)
-    print(">>> geocvs hdr: ", gecsv)
+  report = check_geocsv_fields(metrcs, gecsv)
 
-  if 'brief' in argv_list:
-    print(">>> metrcs: ", metrcs)
-    print(">>> geocvs hdr: ", gecsv) 
+  if not 'test_mode' in argv_list:
+    printReport(report)
 
-  if 'metrics' in argv_list:
-    print(">>> metrcs, url: ", gecsv['url_string'])
-    print(">>> metrcs: ", metrcs)
+  return report
 
-  check_geocsv_fields(metrcs, gecsv)
-
-  return
-
-def printLead(metrcs, gecsv):
-      print()
-      print("--------- url: ", gecsv['url_string'])
-      print("--------- metrics: ", metrcs)
+def printReport(report):
+  for itm in report['order']:
+    if isinstance(report[itm], dict) and itm == 'geocsv_field_sizes':
+      print("-- ", itm, ": ")
+      for it2 in report[itm]:
+        print("---- ", it2, ": ", report[itm][it2])
+    else:
+      print("-- ", itm, ": ", report[itm])
 
 def check_geocsv_fields(metrcs, gecsv):
-  pp = pprint.PrettyPrinter(indent=2,width=120)
-  errPrintCnt = 0
+  report = {'GeoCSV-validated': True,
+      'order': ['GeoCSV-validated', 'url', 'metrics']}
+  report['url'] = gecsv['url_string']
+  report['metrics'] = metrcs
 
+  # check for start
   if (not gecsv['GCStart']):
-    errPrintCnt = errPrintCnt + 1
-    if errPrintCnt == 1: printLead(metrcs, gecsv)
-    print("--------- WARNING, geocsv start line not found, no geocsv information")
-    pp.pprint(gecsv)
+    report['GeoCSV-validated'] = False
+    report['order'].append('no_geocsv_start')
+    report['no_geocsv_start'] = 'WARNING, did not find starting GeoCSV line like: '\
+        + str(GEOCSV_REQUIRED_START_LITERAL)
 
-  fldDict = {}
+  # check for consistent geocsv field parameter values
+  thisFldDict = {}
+  showThisFldDict = False
   gecsvFieldCntSet = set()
   fldSet = GEOCSV_COLUMN_VALUED_KEYWORDS.intersection(set(gecsv.keys()))
   for fldname in fldSet:
     rowiter = iter(list([gecsv[fldname]]))
-
     csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
     for row in csvreadr:
-      ##fldDict[fldname] = "len: " + str(len(row)) + "  val: " + gecsv[fldname]
-      fldDict[fldname] = gecsv[fldname]
-      fldDict[fldname + "_len"] = len(row)
+      thisFldDict[fldname] = gecsv[fldname]
+      thisFldDict[fldname + "_len"] = len(row)
       gecsvFieldCntSet.add(len(row))
 
   if len(gecsvFieldCntSet) > 1:
-    errPrintCnt = errPrintCnt + 1
-    if errPrintCnt == 1: printLead(metrcs, gecsv)
-    print("--------- ERROR, geocsv, one or more inconsistent field counts")
-    pp.pprint(fldDict)
+    report['GeoCSV-validated'] = False
+    report['order'].append('geocsv_field_size_error')
+    report['geocsv_field_size_error'] = 'ERROR, geocsv inconsistent field sizes'
+    showThisFldDict = True
 
+  # check for consistent data field values
   if len(metrcs['dataFieldsCntSet']) > 1:
-    errPrintCnt = errPrintCnt + 1
-    if errPrintCnt == 1: printLead(metrcs, gecsv)
-    print("--------- ERROR, the field count in data rows is inconsistent, counts: ", metrcs['dataFieldsCntSet'])
-    pp.pprint(gecsv)
+    report['GeoCSV-validated'] = False
+    report['order'].append('data_field_size_error')
+    report['data_field_size_error'] = 'ERROR, more than one size for data rows, row sizes: '\
+        + str(metrcs['dataFieldsCntSet'])
 
+  # check for consistent field sizes between data and geocsv field parameters
   if len(metrcs['dataFieldsCntSet'].union(gecsvFieldCntSet)) >\
       max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
-    errPrintCnt = errPrintCnt + 1
-    if errPrintCnt == 1: printLead(metrcs, gecsv)
-    print("--------- ERROR, data fields in row count inconsistent with geocsv fields, datacounts: ", metrcs['dataFieldsCntSet'])
-    pp.pprint(fldDict)
+    report['GeoCSV-validated'] = False
+    report['order'].append('geocsv_to_data_field_size_error')
+    report['geocsv_to_data_field_size_error'] =\
+        'ERROR, row size inconsistent with geocsv field size, data row sizes: '\
+        + str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + str(gecsvFieldCntSet)
+    showThisFldDict = True
+
+  if showThisFldDict:
+    report['order'].append('geocsv_field_sizes')
+    report['geocsv_field_sizes'] = thisFldDict
+
+  return report
 
 if __name__ == "__main__" \
     or __name__ == "geocsvValidate" \
@@ -271,9 +274,9 @@ if __name__ == "__main__" \
       break
 
   if len(url_string) <= 0:
-    print('****** warning, there is no http:// or file:// reference on the'
+    print('******* warning, there is no http:// or file:// reference on the'
         + ' command line list,')
-    print("****** using default url: ", default_url_string)
+    print("******* using default url: ", default_url_string)
     url_string = default_url_string
 
   validate(url_string, sys.argv)
