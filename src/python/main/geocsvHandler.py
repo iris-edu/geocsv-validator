@@ -112,6 +112,12 @@ def handle_csv_row(rowStr, delimiter, metrcs, argv_list):
     metrcs['dataFieldsCntSet'].add(len(row))
     if 'verbose' in argv_list: print(metrcs, "  row: ", row)
 
+    for itm in row:
+      # the length of an items is used here for null detection, this assumes
+      # that all fields are now strings base on the way csv.reader operates
+      if len(itm) <= 0:
+        metrcs['nullFieldCnt'] = metrcs['nullFieldCnt'] + 1
+
     if len(row) <= 0 :
       # not sure this can ever happen
       eStr = "Error, zero columns from csv procession, metrcs: " + str(metrcs)\
@@ -138,7 +144,7 @@ def validate(url_string, argv_list):
   # octothorp - technical name for hash symbol
   # gecsv - content related to geocsv
   metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
-    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'dataFieldsCntSet': set()}
+    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'dataFieldsCntSet': set(), 'nullFieldCnt': 0}
 
   url_iter = response.readlines().__iter__()
   looping = True
@@ -196,10 +202,13 @@ def validate(url_string, argv_list):
 
 def printReport(report):
   for itm in report['order']:
-    if isinstance(report[itm], dict) and itm == 'geocsv_field_sizes':
+    if isinstance(report[itm], dict) and itm == 'geocsv_fields':
       print("-- ", itm, ": ")
-      for it2 in report[itm]:
-        print("---- ", it2, ": ", report[itm][it2])
+      if len(report[itm]) > 0:
+        for it2 in report[itm]:
+          print("---- ", it2, ": ", report[itm][it2])
+      else:
+          print("---- no geocsv fields_* keywords detected")
     else:
       print("-- ", itm, ": ", report[itm])
 
@@ -218,7 +227,7 @@ def check_geocsv_fields(metrcs, gecsv):
 
   # check for consistent geocsv field parameter values
   thisFldDict = {}
-  showThisFldDict = False
+  showGeoCSVFldsDict = False
   gecsvFieldCntSet = set()
   fldSet = GEOCSV_COLUMN_VALUED_KEYWORDS.intersection(set(gecsv.keys()))
   for fldname in fldSet:
@@ -233,7 +242,7 @@ def check_geocsv_fields(metrcs, gecsv):
     report['GeoCSV-validated'] = False
     report['order'].append('geocsv_field_size_error')
     report['geocsv_field_size_error'] = 'ERROR, geocsv inconsistent field sizes'
-    showThisFldDict = True
+    showGeoCSVFldsDict = True
 
   # check for consistent data field values
   if len(metrcs['dataFieldsCntSet']) > 1:
@@ -250,7 +259,7 @@ def check_geocsv_fields(metrcs, gecsv):
     report['geocsv_to_data_field_size_error'] =\
         'ERROR, row size inconsistent with geocsv field size, data row sizes: '\
         + str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + str(gecsvFieldCntSet)
-    showThisFldDict = True
+    showGeoCSVFldsDict = True
 
   # check for field size of one, implying missing or wrong delimiter
   if 1 in metrcs['dataFieldsCntSet'] or 1 in gecsvFieldCntSet:
@@ -259,11 +268,20 @@ def check_geocsv_fields(metrcs, gecsv):
     report['field_size_1_warning'] =\
         'WARNING, geocsv field size or data row size of one, possible problem with delimiter, data row sizes: '\
         + str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + str(gecsvFieldCntSet)
-    showThisFldDict = True
+    showGeoCSVFldsDict = True
 
-  if showThisFldDict:
-    report['order'].append('geocsv_field_sizes')
-    report['geocsv_field_sizes'] = thisFldDict
+  # check for null data field values
+  if metrcs['nullFieldCnt'] > 0:
+    report['GeoCSV-validated'] = False
+    report['order'].append('data_field_null_warning')
+    report['data_field_null_warning'] = 'WARNING, at least one data field was zero length (i.e. null), null count: '\
+        + str(metrcs['nullFieldCnt'])
+
+  # if any errors or warning are related to the field parameters in the
+  # geocsv header, show the specific parameters for this file
+  if showGeoCSVFldsDict:
+    report['order'].append('geocsv_fields')
+    report['geocsv_fields'] = thisFldDict
 
   return report
 
