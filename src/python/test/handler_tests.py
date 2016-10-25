@@ -76,6 +76,8 @@ class GeoCSVTests(unittest.TestCase):
     GeoCSVTests.goodIfFalse(self, self.file_path + 'UNAVCO_sample3.geocsv')
   def test14(self):
     GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample3.geocsv')
+  def test15(self):
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_station1.geocsv')
 
 def run_test_suites(argv_list):
   global g_argv_list
@@ -98,6 +100,7 @@ def run_test_suites(argv_list):
   suite.addTest(GeoCSVTests("test12"))
   suite.addTest(GeoCSVTests("test13"))
   suite.addTest(GeoCSVTests("test14"))
+  suite.addTest(GeoCSVTests("test15"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)

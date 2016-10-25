@@ -55,6 +55,7 @@ def read_geocsv_lines(url_iter, gecsv, metrcs, argv_list):
   try:
     rowStr = next(url_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
     metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
+    rowStr = force_to_ASCII(rowStr, metrcs, argv_list)
 
     if len(rowStr) <= 0:
       # ignore zero length line
@@ -84,7 +85,9 @@ def read_geocsv_lines(url_iter, gecsv, metrcs, argv_list):
         value = rowStr[len(mObj.group(0)):].strip()
 
         if sys.version_info[0] < 3:
-          # avoid using unicode strings when running python 2
+          # in python 2, csv module requires a string in input parameters
+          # e.g. delimiter, the matcher object returns unicode, so the
+          # keyword and value returned from matcher are forced to ASCII
           keyword = keyword.encode('ascii')
           value = value.encode('ascii')
 
@@ -101,20 +104,47 @@ def read_geocsv_lines(url_iter, gecsv, metrcs, argv_list):
 
   return rowStr
 
+# detect unicode and force to ASCII
+def force_to_ASCII(rowStr, metrcs, argv_list):
+  try:
+    if sys.version_info[0] < 3:
+      rowASCII = rowStr.decode('utf-8')
+    else:
+      try:
+        str(rowStr.encode('ascii'))
+        rowASCII = rowStr
+      except UnicodeEncodeError:
+        if 'verbose' in argv_list: print("--unicode-- ", rowStr)
+        metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
+        rowASCII = rowStr.encode('ascii', 'replace').decode('ascii')
+  except UnicodeEncodeError:
+    if 'verbose' in argv_list: print("--unicode-- ", rowStr)
+    metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
+    rowASCII = rowStr.encode('ascii', 'replace')
+
+  return rowASCII
+
 def handle_csv_row(rowStr, delimiter, metrcs, argv_list):
   # csv module interface is not setup to stream one line at a time,
   # so make a list of 1 row
-  rowiter = iter(list([rowStr]))
-
+  # also, python 2 csv does not handle unicode values, so force to ASCII
+  rowASCII = force_to_ASCII(rowStr, metrcs, argv_list)
+  rowiter = iter(list([rowASCII]))
   csvreadr = csv.reader(rowiter, delimiter = delimiter)
   for row in csvreadr:
     metrcs['rowCnt'] = metrcs['rowCnt'] + 1
     metrcs['dataFieldsCntSet'].add(len(row))
-    if 'verbose' in argv_list: print(metrcs, "  row: ", row)
+    if 'verbose' in argv_list:
+      if (metrcs['rowCnt'] == 1):
+        print(metrcs, "  row:", row)
+        print(metrcs.values(), row)
+      else:
+        print(metrcs.values(), row)
+    ##if 'verbose' in argv_list: print(metrcs, "  row: ", row)
 
     for itm in row:
-      # the length of an items is used here for null detection, this assumes
-      # that all fields are now strings base on the way csv.reader operates
+      # a length of zero for a cell item is used as the definition of null
+      # csv.reader evendently converts input fields to strings
       if len(itm) <= 0:
         metrcs['nullFieldCnt'] = metrcs['nullFieldCnt'] + 1
 
@@ -129,8 +159,10 @@ def report_octothorp(argv_list, metrcs, rowStr):
     print("octothorp ", metrcs, "  rowStr: ", rowStr.rstrip())
 
 def validate(url_string, argv_list):
-  # put newline to improve readability for unit test when not in test mode
-  if not 'test_mode' in argv_list: print()
+  # adjustments for readability in test_mode
+  if 'new_line' in argv_list: print()
+  if 'octothorp' in argv_list or 'verbose' in argv_list:
+    print("******* starting")
 
   # geocsv object
   gecsv = {'GCStart': False, 'delimiter': ',', 'other_keywords': {}}
@@ -140,11 +172,12 @@ def validate(url_string, argv_list):
   gecsv['url_string'] = url_string
 
   # capture metrics about content
-  # metrcs - metrics about file and data content
+  # metrcs - metrics about data content
   # octothorp - technical name for hash symbol
-  # gecsv - content related to geocsv
+  # gecsv - content related to geocsv header information
   metrcs = {'totalLineCnt': 0, 'rowCnt': 0, 'zeroLenCnt': 0,
-    'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'dataFieldsCntSet': set(), 'nullFieldCnt': 0}
+      'ignoreLineCnt': 0, 'geocsvLineCnt': 0, 'dataFieldsCntSet': set(),
+      'nullFieldCnt': 0, 'unicodeLineCnt': 0}
 
   url_iter = response.readlines().__iter__()
   looping = True

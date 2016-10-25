@@ -1,0 +1,13 @@
+#dataset: GeoCSV 2.0
+#delimiter: |
+#field_unit: unitless | unitless | degrees_north | degrees_east | meters | unitless | ISO_8601 | ISO_8601
+#field_type: string | string | float | float | float | string | datetime | datetime
+#field_long_name: Observatorio | Sismologico | Politécnico | Loyolastring | string | datetime | Politécnico
+Network|Station|Latitude|Longitude|Elevation|SiteName|StartTime|EndTime
+1A|WP01|33.8405|-103.8673|1362.0|Carlsbad, New Mexico, USA|2013-07-08T00:00:00Z|2013-07-10T23:59:59Z
+1A|WP02|32.591|-104.6917|1276.0|Carlsbad, New Mexico, USA|2013-07-09T00:00:00Z|2013-07-11T23:59:59Z
+1A|WP03|32.4917|-104.5155|1272.0|Carlsbad, New Mexico, USA|2013-07-09T00:00:00Z|2013-07-11T23:59:59Z
+1A|WP04|32.3552|-103.3985|1055.0|Carlsbad, New Mexico, USA|2013-07-10T00:00:00Z|2013-07-13T23:59:59Z
+1A|WP05|32.2641|-103.8791|1043.0|Carlsbad, New Mexico, USA|2013-07-11T00:00:00Z|2013-07-13T23:59:59Z
+1A|WP06|32.4726|-103.6343|1189.0|Carlsbad, New Mexico, USA Politécnico|2013-07-11T00:00:00Z|2013-07-12T23:59:59Z
+1A|NE00|39.99|124.307|44.0|Zhenxing, Dandong, Liaoning, China|2007-10-03T00:00:00Z|2008-09-30T23:59:59Z
