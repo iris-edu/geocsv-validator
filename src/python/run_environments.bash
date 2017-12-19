@@ -11,6 +11,9 @@ dir=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 ##  argu1=$1
 ##fi
 
+# show what is possible, assumes anaconda
+conda info --envs
+
 source activate root
 ${dir}/run_tests.py $*
 

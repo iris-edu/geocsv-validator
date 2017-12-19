@@ -25,16 +25,30 @@ class GeoCSVTests(unittest.TestCase):
 ##    self.t1.dispose()
 ##    self.t1 = None
 
-  def goodIfTrue(self, target_url):
+  def doValidate(self, target_url):
+    pctl = main.GeocsvHandler.default_program_control()
+    pctl['input_url'] = target_url
+    pctl['verbose'] = False
+    pctl['new_line'] = False  # one blank line before report - primarily for test runs
+    pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
+    pctl['test_mode'] = True  # turns off report when true (i.e. keeps unit test report small)
+
+    # everything printing out
+    pctl['verbose'] = True
+    pctl['new_line'] = True  # one blank line before report - primarily for test runs
+    pctl['octothorp'] = True  # explicitly list any line with # and respective metrics
+    pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
     geocsvObj = main.GeocsvHandler.GeocsvHandler()
-    report = geocsvObj.validate(target_url, g_argv_list)
-    if report['GeoCSV-validated'] == False:
+    return geocsvObj.validate(pctl)
+
+  def goodIfTrue(self, target_url):
+    report = self.doValidate(target_url)
+    if report['GeoCSV_validated'] == False:
       self.fail(report)
 
   def goodIfFalse(self, target_url):
-    geocsvObj = main.GeocsvHandler.GeocsvHandler()
-    report = geocsvObj.validate(target_url, g_argv_list)
-    if report['GeoCSV-validated'] == True:
+    report = self.doValidate(target_url)
+    if report['GeoCSV_validated'] == True:
       self.fail(report)
 
   # test URLs are from live services, i.e. subject to failure if service
