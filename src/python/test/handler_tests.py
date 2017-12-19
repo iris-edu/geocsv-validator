@@ -10,7 +10,7 @@ from future.builtins.disabled import *
 
 import os
 import unittest
-import main.geocsvHandler
+import main.GeocsvHandler
 
 g_argv_list = False
 
@@ -26,12 +26,14 @@ class GeoCSVTests(unittest.TestCase):
 ##    self.t1 = None
 
   def goodIfTrue(self, target_url):
-    report = main.geocsvHandler.validate(target_url, g_argv_list)
+    geocsvObj = main.GeocsvHandler.GeocsvHandler()
+    report = geocsvObj.validate(target_url, g_argv_list)
     if report['GeoCSV-validated'] == False:
       self.fail(report)
 
   def goodIfFalse(self, target_url):
-    report = main.geocsvHandler.validate(target_url, g_argv_list)
+    geocsvObj = main.GeocsvHandler.GeocsvHandler()
+    report = geocsvObj.validate(target_url, g_argv_list)
     if report['GeoCSV-validated'] == True:
       self.fail(report)
 
@@ -78,6 +80,8 @@ class GeoCSVTests(unittest.TestCase):
     GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample3.geocsv')
   def test15(self):
     GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_station1.geocsv')
+  def test16(self):
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample4.geocsv')
 
 def run_test_suites(argv_list):
   global g_argv_list
@@ -101,6 +105,7 @@ def run_test_suites(argv_list):
   suite.addTest(GeoCSVTests("test13"))
   suite.addTest(GeoCSVTests("test14"))
   suite.addTest(GeoCSVTests("test15"))
+  suite.addTest(GeoCSVTests("test16"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)
