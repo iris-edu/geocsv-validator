@@ -21,36 +21,23 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
 
     self.GeocsvHandler = GeocsvHandler.GeocsvHandler()
 
-##  @tornado.gen.coroutine
-  def xyzget(self):
-    print("***** MainHandler coroutine get")
-    http = tornado.httpclient.AsyncHTTPClient()
-    response = yield http.fetch(self.default_url_string)
-    print ("***** type response", type(response))
-    print ("***** response", response)
-    print ("***** type response body", type(response.body))
-    print ("***** response body", response.body)
-  ##  json = tornado.escape.json_decode(response.body)
-    self.write("***** Fetched " + str(response.body) )
-
   def get(self):
     response = self.doValidate(self.default_url_string)
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
-    self.set_header('Content-Disposition',  'inline; filename=geows-geocsv.txt')
+    self.set_header('Content-Disposition', 'inline; filename=geows-geocsv.txt')
     self.write("*&*&*&*&*&*\n" + response)
-
 
   def doValidate(self, target_url):
     pctl = GeocsvHandler.default_program_control()
     pctl['input_url'] = target_url
     pctl['verbose'] = False
-    pctl['new_line'] = False  # one blank line before report - primarily for test runs
     pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
     pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
 
     report_obj = self.GeocsvHandler.validate(pctl)
-    return self.GeocsvHandler.createReportStr(report_obj)
+    rstr = self.GeocsvHandler.createReportStr(report_obj)
+    return rstr
 
 def make_app():
     return tornado.web.Application([

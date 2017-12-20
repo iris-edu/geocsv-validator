@@ -29,13 +29,11 @@ class GeoCSVTests(unittest.TestCase):
     pctl = main.GeocsvHandler.default_program_control()
     pctl['input_url'] = target_url
     pctl['verbose'] = False
-    pctl['new_line'] = False  # one blank line before report - primarily for test runs
     pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
     pctl['test_mode'] = True  # turns off report when true (i.e. keeps unit test report small)
 
     # everything printing out
     pctl['verbose'] = True
-    pctl['new_line'] = True  # one blank line before report - primarily for test runs
     pctl['octothorp'] = True  # explicitly list any line with # and respective metrics
     pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
     geocsvObj = main.GeocsvHandler.GeocsvHandler()

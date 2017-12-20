@@ -49,15 +49,18 @@ class GeocsvHandler(object):
 
   def get_response(self, pctl):
     try:
-      if pctl['verbose']: print("******* opening input_url: " + pctl['input_url'])
+      if pctl['verbose']:
+        print("******* opening input_url: " + pctl['input_url'])
       response = urlopen(pctl['input_url'])
     except HTTPError as e:
-      print(e.code)
-      print(e.read())
-      print("******* failed on target: ", URL)
+      sys.stderr.write(str(e.code))
+      sys.stderr.write(str(e.read()))
+      sys.stderr.write("******* failed on input_url: " + \
+          str(pctl['input_url']) + "\n")
       sys.exit()
 
-    if pctl['verbose']: print("******* waiting for reply ...")
+    if pctl['verbose']:
+      print("******* waiting for reply ...")
     return response
 
   def read_geocsv_lines(self, url_iter, gecsv, metrcs, pctl):
@@ -123,11 +126,13 @@ class GeocsvHandler(object):
           str(rowStr.encode('ascii'))
           rowASCII = rowStr
         except UnicodeEncodeError:
-          if pctl['verbose']: print("--unicode-- ", rowStr)
+          if pctl['verbose']:
+            print("--unicode-- ", rowStr)
           metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
           rowASCII = rowStr.encode('ascii', 'replace').decode('ascii')
     except UnicodeEncodeError:
-      if pctl['verbose']: print("--unicode-- ", rowStr)
+      if pctl['verbose']:
+        print("--unicode-- ", rowStr)
       metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
       rowASCII = rowStr.encode('ascii', 'replace')
 
@@ -147,9 +152,9 @@ class GeocsvHandler(object):
         if (metrcs['rowCnt'] == 1):
           print("******* row by row metrics")
           print(metrcs.keys())
-          print(metrcs.values(), " row:", row)
+          print(metrcs.values(), " line:", row)
         else:
-          print(metrcs.values(), " row:", row)
+          print(metrcs.values(), " line:", row)
 
       for itm in row:
         # a length of zero for a cell item is used as the definition of null
@@ -165,14 +170,14 @@ class GeocsvHandler(object):
 
   def report_octothorp(self, pctl, metrcs, rowStr):
     if pctl['octothorp']:
-      print("octothorp line: ", metrcs.values(), "  row: ", rowStr.rstrip())
+      print("octothorp line: ", metrcs.values(), "  line: ", rowStr.rstrip())
 
   def validate(self, pctl):
     # adjustments for readability in test_mode
-    if pctl['new_line']:
-      print()
     if pctl['octothorp'] or pctl['verbose']:
-      print("******* starting validate...")
+      print()
+      print("******* GeocsvHandler starting validate  datetime: " + \
+              str(datetime.datetime.now(pytz.utc).isoformat()))
 
     # geocsv object
     gecsv = {'geocsv_start_found': False, 'delimiter': ',', 'other_keywords': {}}
@@ -238,17 +243,14 @@ class GeocsvHandler(object):
           # handle most non-geocsv for generic comment lines
           self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl)
       except StopIteration:
-        if pctl['verbose']: print("******* geocsvHandler finished *******")
+        if pctl['octothorp'] or pctl['verbose']:
+          print("******* GeocsvHandler finished validate  datetime: " + \
+              str(datetime.datetime.now(pytz.utc).isoformat()))
         looping = False
       finally:
         response.close()
 
     report = self.check_geocsv_fields(metrcs, gecsv)
-
-    if not pctl['test_mode']:
-      rstr = self.createReportStr(report)
-      sys.stdout.write(rstr)
-
     return report
 
   def createReportStr(self, report):
@@ -265,6 +267,12 @@ class GeocsvHandler(object):
       else:
         rstr += "-- " + str(itm) + ": " + str(report[itm]) + "\n"
     return rstr
+
+  def doReport(self, pctl):
+    report = self.validate(pctl)
+    if not pctl['test_mode']:
+      rstr = self.createReportStr(report)
+      sys.stdout.write(rstr)
 
   def check_geocsv_fields(self, metrcs, gecsv):
     report = collections.OrderedDict()
@@ -299,14 +307,14 @@ class GeocsvHandler(object):
     # check for consistent data field values
     if len(metrcs['dataFieldsCntSet']) > 1:
       report['GeoCSV_validated'] = False
-      report['data_field_size_error'] = 'ERROR, more than one size for data' + \
+      report['data_field_size_error'] = 'ERROR, more than one size for data ' + \
           'rows, row sizes: ' + str(metrcs['dataFieldsCntSet'])
 
     # check for consistent field sizes between data and geocsv field parameters
     if len(metrcs['dataFieldsCntSet'].union(gecsvFieldCntSet)) >\
         max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
       report['GeoCSV_validated'] = False
-      report['geocsv_to_data_field_size_error'] = 'ERROR, row size inconsistent' + \
+      report['geocsv_to_data_field_size_error'] = 'ERROR, row size inconsistent ' + \
           'with geocsv field size, data row sizes: ' + str(metrcs['dataFieldsCntSet']) + \
           '  geocsv field sizes: ' + str(gecsvFieldCntSet)
       showGeoCSVFldsDict = True
@@ -314,7 +322,7 @@ class GeocsvHandler(object):
     # check for field size of one, implying missing or wrong delimiter
     if 1 in metrcs['dataFieldsCntSet'] or 1 in gecsvFieldCntSet:
       report['GeoCSV_validated'] = False
-      report['field_size_1_warning'] = 'WARNING, geocsv field size or data' + \
+      report['field_size_1_warning'] = 'WARNING, geocsv field size or data ' + \
           'row size of one, possible problem with delimiter, data row sizes: ' + \
           str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + \
           str(gecsvFieldCntSet)
@@ -323,7 +331,7 @@ class GeocsvHandler(object):
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
       report['GeoCSV_validated'] = False
-      report['data_field_null_warning'] = 'WARNING, at least one data field' + \
+      report['data_field_null_warning'] = 'WARNING, at least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
 
     # if any errors or warning are related to the field parameters in the
@@ -338,50 +346,32 @@ def default_program_control():
   pctl['input_url'] = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
       + 'query?format=text&showNumberFormatExceptions=true'
   pctl['verbose'] = True
-  pctl['new_line'] = True  # one blank line before report - primarily for test runs
   pctl['octothorp'] = True  # explicitly list any line with # and respective metrics
   pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
 
   return pctl
 
 def parse_cmd_lines():
+  pctl = default_program_control()
+
   parser = argparse.ArgumentParser(description=\
-    'Read text file of json objects, one per line, do statistics on key_of_number')
-  # note, if having trouble reading negative shift, put quotes and a space in front e.g.  -1.0:9.5367431640625e-07"
-  parser.add_argument("--input_file_name", \
-    help='file name, expecting JSON object per line', \
+    'Read a GeoCSV file and check for conformance against the recommended ' + \
+    'standard, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
+
+  parser.add_argument("--input_name", help='Input a URL, http:// or file://', \
     type=str, required=True, default='nameRequired')
   args = parser.parse_args()
-  print("************** type args: ", type(args))
-  print("geocsvHandler args: ", args)
 
-  return default_program_control()
+  pctl['input_url'] = args.input_name
+
+  return pctl
 
 if __name__ == "__main__" \
     or __name__ == "GeocsvValidate" \
     or __name__ == "src.python.main.GeocsvValidate":
 
-  print("geocsvHandler argv: ", sys.argv)
-
-  default_url_string = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
-      + 'query?format=text&showNumberFormatExceptions=true'
-  url_string = ''
-  for item in sys.argv:
-    if item.find('http://') >= 0\
-        or item.find('file://') >= 0:
-      url_string = item
-      break
-
-  if len(url_string) <= 0:
-    print('******* warning, there is no http:// or file:// reference on the'
-        + ' command line list,')
-    print("******* using default url: ", default_url_string)
-    url_string = default_url_string
-
-  print("************** type argv: ", type(sys.argv))
-
   pctl = parse_cmd_lines()
 
   geocsvObj = GeocsvHandler()
-  geocsvObj.validate(pctl)
+  geocsvObj.doReport(pctl)
 
