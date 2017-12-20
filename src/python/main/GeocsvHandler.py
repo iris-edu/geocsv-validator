@@ -246,25 +246,25 @@ class GeocsvHandler(object):
     report = self.check_geocsv_fields(metrcs, gecsv)
 
     if not pctl['test_mode']:
-      self.printReport(report)
+      rstr = self.createReportStr(report)
+      sys.stdout.write(rstr)
 
     return report
 
-  def printReport(self, report):
-    sys.stdout.write("-- GeoCSV_Validate_Report  datetime: " + \
-        str(datetime.datetime.now(pytz.utc).isoformat()) + "\n")
+  def createReportStr(self, report):
+    rstr = "-- GeoCSV_Validate_Report  datetime: " + \
+        str(datetime.datetime.now(pytz.utc).isoformat()) + "\n"
     for itm in report:
       if isinstance(report[itm], dict) and itm == 'geocsv_fields':
-        sys.stdout.write("-- " + str(itm) + ": " + "\n")
+        rstr += "-- " + str(itm) + ": " + "\n"
         if len(report[itm]) > 0:
           for it2 in report[itm]:
-            sys.stdout.write("---- " + str(it2) + ": " + \
-                str(report[itm][it2]) + "\n")
+            rstr += "---- " + str(it2) + ": " + str(report[itm][it2]) + "\n"
         else:
-            sys.stdout.write("---- no geocsv fields_* keywords detected" + \
-                "\n")
+            rstr += "---- no geocsv fields_* keywords detected" + "\n"
       else:
-        sys.stdout.write("-- " + str(itm) + ": " + str(report[itm]) + "\n")
+        rstr += "-- " + str(itm) + ": " + str(report[itm]) + "\n"
+    return rstr
 
   def check_geocsv_fields(self, metrcs, gecsv):
     report = collections.OrderedDict()
