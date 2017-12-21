@@ -60,7 +60,8 @@ class GeocsvHandler(object):
       sys.exit()
 
     if pctl['verbose']:
-      print("******* waiting for reply ...")
+      print("******* received reply ...  datetime: " + \
+              str(datetime.datetime.now(pytz.utc).isoformat()))
     return response
 
   def read_geocsv_lines(self, url_iter, gecsv, metrcs, pctl):
@@ -117,6 +118,14 @@ class GeocsvHandler(object):
     return rowStr
 
   # detect unicode and force to ASCII
+  def handle_unicode(self, rowStr, metrcs, pctl):
+    metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
+    if pctl['verbose'] or pctl['unicode']:
+      print("--unicode-- ", list(metrcs.values()), "  line: ", rowStr.rstrip())
+    rowASCII = rowStr.encode('ascii', 'replace').decode('ascii')
+    return rowASCII
+
+  # detect unicode and force to ASCII
   def force_to_ASCII(self, rowStr, metrcs, pctl):
     try:
       if sys.version_info[0] < 3:
@@ -126,15 +135,9 @@ class GeocsvHandler(object):
           str(rowStr.encode('ascii'))
           rowASCII = rowStr
         except UnicodeEncodeError:
-          if pctl['verbose']:
-            print("--unicode-- ", rowStr)
-          metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
-          rowASCII = rowStr.encode('ascii', 'replace').decode('ascii')
+          rowASCII = self.handle_unicode(rowStr, metrcs, pctl)
     except UnicodeEncodeError:
-      if pctl['verbose']:
-        print("--unicode-- ", rowStr)
-      metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
-      rowASCII = rowStr.encode('ascii', 'replace')
+      rowASCII = self.handle_unicode(rowStr, metrcs, pctl)
 
     return rowASCII
 
@@ -149,18 +152,19 @@ class GeocsvHandler(object):
       metrcs['rowCnt'] = metrcs['rowCnt'] + 1
       metrcs['dataFieldsCntSet'].add(len(row))
       if pctl['verbose']:
-        if (metrcs['rowCnt'] == 1):
-          print("******* row by row metrics")
-          print(metrcs.keys())
-          print(metrcs.values(), " line:", row)
-        else:
-          print(metrcs.values(), " line:", row)
+##        if (metrcs['rowCnt'] == 1):
+##          print("******* row by row metrics, metric fields: ", list(metrcs.keys()))
+        print(list(metrcs.values()), " line:", row)
 
+      anyNulls = False
       for itm in row:
         # a length of zero for a cell item is used as the definition of null
-        # csv.reader evendently converts input fields to strings
+        # csv.reader evedently converts input fields to strings
         if len(itm) <= 0:
           metrcs['nullFieldCnt'] = metrcs['nullFieldCnt'] + 1
+          anyNulls = True
+      if anyNulls and pctl['null_fields']:
+        print("--null_fields-- ", list(metrcs.values()), "  line: ", rowStr.rstrip())
 
       if len(row) <= 0:
         # not sure this can ever happen
@@ -170,11 +174,24 @@ class GeocsvHandler(object):
 
   def report_octothorp(self, pctl, metrcs, rowStr):
     if pctl['octothorp']:
-      print("octothorp line: ", metrcs.values(), "  line: ", rowStr.rstrip())
+      print("--octothorp-- ", list(metrcs.values()), "  line: ", rowStr.rstrip())
 
   def validate(self, pctl):
-    # adjustments for readability in test_mode
-    if pctl['octothorp'] or pctl['verbose']:
+    # capture metrics about content
+    # metrcs - metrics about data content
+    # octothorp - name for hash symbol
+    # gecsv - content related to geocsv header information
+    metrcs = collections.OrderedDict()
+    metrcs['totalLineCnt'] = 0
+    metrcs['rowCnt'] = 0
+    metrcs['zeroLenCnt'] = 0
+    metrcs['ignoreLineCnt'] = 0
+    metrcs['geocsvLineCnt'] = 0
+    metrcs['dataFieldsCntSet'] = set()
+    metrcs['nullFieldCnt'] = 0
+    metrcs['unicodeLineCnt'] = 0
+
+    if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
       print()
       print("******* GeocsvHandler starting validate  datetime: " + \
               str(datetime.datetime.now(pytz.utc).isoformat()))
@@ -186,19 +203,9 @@ class GeocsvHandler(object):
 
     gecsv['url_string'] = pctl['input_url']
 
-    # capture metrics about content
-    # metrcs - metrics about data content
-    # octothorp - technical name for hash symbol
-    # gecsv - content related to geocsv header information
-    metrcs = collections.OrderedDict()
-    metrcs['totalLineCnt'] = 0
-    metrcs['rowCnt'] = 0
-    metrcs['zeroLenCnt'] = 0
-    metrcs['ignoreLineCnt'] = 0
-    metrcs['geocsvLineCnt'] = 0
-    metrcs['dataFieldsCntSet'] = set()
-    metrcs['nullFieldCnt'] = 0
-    metrcs['unicodeLineCnt'] = 0
+    if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
+      # note: creating a list here to get py 2.x and 3.x to have simple lsit
+      print("******* metric fields: ", list(metrcs.keys()))
 
     url_iter = response.readlines().__iter__()
     looping = True
@@ -228,11 +235,10 @@ class GeocsvHandler(object):
 
               rowStr = self.read_geocsv_lines(url_iter, gecsv, metrcs, pctl)
               if pctl['verbose']:
-                print("******* geocsv header finished, GeoCSV parameters: ", gecsv)
-                print("******* geocsv header finished, metrics keys: ", metrcs.keys())
-                print("******* geocsv header finished, metric values: ", metrcs.values())
+                print("******* GeoCSV - parsed header and status parameters: ", gecsv)
+                print("******* GeoCSV - after header read metrics: ", list(metrcs.values()))
 
-              # handle first non-geocsv line after finished reading geocsv lines
+              # handle first non-geocsv line after finished reading geocsv header lines
               self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl)
           else:
             # ignore octothorp lines after reading geocsv lines
@@ -243,7 +249,7 @@ class GeocsvHandler(object):
           # handle most non-geocsv for generic comment lines
           self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl)
       except StopIteration:
-        if pctl['octothorp'] or pctl['verbose']:
+        if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
           print("******* GeocsvHandler finished validate  datetime: " + \
               str(datetime.datetime.now(pytz.utc).isoformat()))
         looping = False
@@ -265,7 +271,11 @@ class GeocsvHandler(object):
         else:
             rstr += "---- no geocsv fields_* keywords detected" + "\n"
       else:
-        rstr += "-- " + str(itm) + ": " + str(report[itm]) + "\n"
+        if itm == 'metrics':
+          # trickery to make OrderedDict look the same between 2.x and 3.x
+          rstr += "-- " + str(itm) + ": " + str(list(report[itm].items())) + "\n"
+        else:
+          rstr += "-- " + str(itm) + ": " + str(report[itm]) + "\n"
     return rstr
 
   def doReport(self, pctl):
@@ -273,6 +283,7 @@ class GeocsvHandler(object):
     if not pctl['test_mode']:
       rstr = self.createReportStr(report)
       sys.stdout.write(rstr)
+    return report
 
   def check_geocsv_fields(self, metrcs, gecsv):
     report = collections.OrderedDict()
@@ -345,8 +356,10 @@ def default_program_control():
   pctl = {}
   pctl['input_url'] = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
       + 'query?format=text&showNumberFormatExceptions=true'
-  pctl['verbose'] = True
-  pctl['octothorp'] = True  # explicitly list any line with # and respective metrics
+  pctl['verbose'] = False
+  pctl['octothorp'] = False  # show lines with # and respective metrics
+  pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
+  pctl['null_fields'] = False  # show lines if any field is null and respective metrics
   pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
 
   return pctl
@@ -355,14 +368,34 @@ def parse_cmd_lines():
   pctl = default_program_control()
 
   parser = argparse.ArgumentParser(description=\
-    'Read a GeoCSV file and check for conformance against the recommended ' + \
-    'standard, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
+      'Read a GeoCSV file and check for conformance against the recommended ' + \
+      'standard, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
 
   parser.add_argument("--input_name", help='Input a URL, http:// or file://', \
-    type=str, required=True, default='nameRequired')
+      type=str, required=True, default='nameRequired')
+  parser.add_argument('--verbose', \
+      help='Show metrics for every data line', type=bool, default=False)
+  parser.add_argument('--octothorp', \
+      help='Show metrics for lines with # after initial start of data lines', \
+      type=bool, default=False)
+  parser.add_argument('--unicode', \
+      help='Show metrics for lines with unicode', \
+      type=bool, default=False)
+  parser.add_argument('--null_fields', \
+      help='Show metrics for lines if any field is null', \
+      type=bool, default=False)
+  parser.add_argument('--test_mode', \
+      help='Do not show report lines when true, this may be used to make ' + \
+      'a succinct unit tests report)', type=bool, default=False)
+
   args = parser.parse_args()
 
   pctl['input_url'] = args.input_name
+  pctl['verbose'] = args.verbose
+  pctl['octothorp'] = args.octothorp
+  pctl['unicode'] = args.unicode
+  pctl['null_fields'] = args.null_fields
+  pctl['test_mode'] = args.test_mode
 
   return pctl
 

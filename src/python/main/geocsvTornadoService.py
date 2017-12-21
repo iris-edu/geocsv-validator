@@ -33,6 +33,8 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
     pctl['input_url'] = target_url
     pctl['verbose'] = False
     pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
+    pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
+    pctl['null_fields'] = False  # show lines if any field is null and respective metrics
     pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
 
     report_obj = self.GeocsvHandler.validate(pctl)

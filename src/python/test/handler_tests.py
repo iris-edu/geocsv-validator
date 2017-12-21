@@ -30,14 +30,19 @@ class GeoCSVTests(unittest.TestCase):
     pctl['input_url'] = target_url
     pctl['verbose'] = False
     pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
+    pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
+    pctl['null_fields'] = False  # show lines if any field is null and respective metrics
     pctl['test_mode'] = True  # turns off report when true (i.e. keeps unit test report small)
 
     # everything printing out
-    pctl['verbose'] = True
-    pctl['octothorp'] = True  # explicitly list any line with # and respective metrics
-    pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
+##    pctl['verbose'] = True
+##    pctl['octothorp'] = True  # explicitly list any line with # and respective metrics
+##    pctl['unicode'] = True  # show lines where unicode is detected and respective metrics
+##    pctl['null_fields'] = True  # show lines if any field is null and respective metrics
+##    pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
+
     geocsvObj = main.GeocsvHandler.GeocsvHandler()
-    return geocsvObj.validate(pctl)
+    return geocsvObj.doReport(pctl)
 
   def goodIfTrue(self, target_url):
     report = self.doValidate(target_url)
