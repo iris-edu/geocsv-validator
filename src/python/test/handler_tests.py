@@ -11,6 +11,7 @@ from future.builtins.disabled import *
 import os
 import unittest
 import main.GeocsvHandler
+import sys
 
 g_argv_list = False
 
@@ -41,7 +42,7 @@ class GeoCSVTests(unittest.TestCase):
 ##    pctl['null_fields'] = True  # show lines if any field is null and respective metrics
 ##    pctl['test_mode'] = False  # turns off report when true (i.e. keeps unit test report small)
 
-    geocsvObj = main.GeocsvHandler.GeocsvHandler()
+    geocsvObj = main.GeocsvHandler.GeocsvHandler(sys.stdout)
     return geocsvObj.doReport(pctl)
 
   def goodIfTrue(self, target_url):
@@ -53,6 +54,12 @@ class GeoCSVTests(unittest.TestCase):
     report = self.doValidate(target_url)
     if report['GeoCSV_validated'] == True:
       self.fail(report)
+
+  # ******* tests
+  def testm1(self):
+    GeoCSVTests.goodIfFalse(self, 'http://www.google.com/xyzcba')
+  def test00(self):
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'bad_url.geocsv')
 
   # test URLs are from live services, i.e. subject to failure if service
   # is unavailable
@@ -107,6 +114,8 @@ def run_test_suites(argv_list):
   print ("**** run_test_suites context name: ", __name__)
 
   suite = unittest.TestSuite()
+  suite.addTest(GeoCSVTests("testm1"))
+  suite.addTest(GeoCSVTests("test00"))
   suite.addTest(GeoCSVTests("test02"))
   suite.addTest(GeoCSVTests("test01"))
   suite.addTest(GeoCSVTests("test03"))
