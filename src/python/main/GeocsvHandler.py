@@ -61,15 +61,15 @@ class GeocsvHandler(object):
       metrcs = self.createMetricsObj()
       gecsv = self.createGeocsvObj(pctl['input_url'])
       report = self.check_geocsv_fields(metrcs, gecsv)
-      report['url_HTTPError_HTTPcode'] = str(e.code)
-      report['url_HTTPError_exception'] = str(e)
+      report['HTTPError_HTTPcode'] = str(e.code)
+      report['HTTPError_Exception'] = str(e)
       result_for_get['except_report'] = report
       return result_for_get
     except Exception as e:
       metrcs = self.createMetricsObj()
       gecsv = self.createGeocsvObj(pctl['input_url'])
       report = self.check_geocsv_fields(metrcs, gecsv)
-      report['url_exception'] = str(e)
+      report['ERROR_Exception'] = str(e)
       result_for_get['except_report'] = report
       return result_for_get
 
@@ -180,7 +180,8 @@ class GeocsvHandler(object):
           metrcs['nullFieldCnt'] = metrcs['nullFieldCnt'] + 1
           anyNulls = True
       if anyNulls and pctl['null_fields']:
-        print("--null_fields-- ", list(metrcs.values()), "  line: ", rowStr.rstrip())
+        self.stdwriter.write("--null_fields-- " + str(list(metrcs.values())) + \
+            "  line: " + str(rowStr.rstrip()) + "\n")
 
       if len(row) <= 0:
         # not sure this can ever happen
@@ -190,7 +191,8 @@ class GeocsvHandler(object):
 
   def report_octothorp(self, pctl, metrcs, rowStr):
     if pctl['octothorp']:
-      print("--octothorp-- ", list(metrcs.values()), "  line: ", rowStr.rstrip())
+      self.stdwriter.write("--octothorp-- " + str(list(metrcs.values())) + \
+          "  line: " + str(rowStr.rstrip()) + "\n")
 
   def createMetricsObj(self):
     # capture metrics about content
@@ -315,7 +317,7 @@ class GeocsvHandler(object):
   def doReport(self, pctl):
     report = self.validate(pctl)
     if pctl['test_mode']:
-      # does not print print report so unit tests are very succinct
+      # allows for not printing report, so unit tests can be very succinct
       pass
     else:
       rstr = self.createReportStr(report)
@@ -331,7 +333,7 @@ class GeocsvHandler(object):
     # check for start
     if (not gecsv['geocsv_start_found']):
       report['GeoCSV_validated'] = False
-      report['no_geocsv_start'] = 'WARNING, start of GeoCSV not found,' + \
+      report['WARNING_no_geocsv_start'] = 'WARNING, start of GeoCSV not found,' + \
           ' expecting this line: ' + str(GEOCSV_REQUIRED_START_LITERAL)
 
     # check for consistent geocsv field parameter values
@@ -349,20 +351,20 @@ class GeocsvHandler(object):
 
     if len(gecsvFieldCntSet) > 1:
       report['GeoCSV_validated'] = False
-      report['geocsv_field_size_error'] = 'ERROR, geocsv inconsistent field sizes'
+      report['ERROR_geocsv_field_size'] = 'Inconsistent geocsv field sizes'
       showGeoCSVFldsDict = True
 
     # check for consistent data field values
     if len(metrcs['dataFieldsCntSet']) > 1:
       report['GeoCSV_validated'] = False
-      report['data_field_size_error'] = 'ERROR, more than one size for data ' + \
+      report['ERROR_data_field_size'] = 'There is more than one size for data ' + \
           'rows, row sizes: ' + str(metrcs['dataFieldsCntSet'])
 
     # check for consistent field sizes between data and geocsv field parameters
     if len(metrcs['dataFieldsCntSet'].union(gecsvFieldCntSet)) >\
         max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
       report['GeoCSV_validated'] = False
-      report['geocsv_to_data_field_size_error'] = 'ERROR, row size inconsistent ' + \
+      report['ERROR_ geocsv_to_data_field_size'] = 'A row size is inconsistent ' + \
           'with geocsv field size, data row sizes: ' + str(metrcs['dataFieldsCntSet']) + \
           '  geocsv field sizes: ' + str(gecsvFieldCntSet)
       showGeoCSVFldsDict = True
@@ -370,8 +372,8 @@ class GeocsvHandler(object):
     # check for field size of one, implying missing or wrong delimiter
     if 1 in metrcs['dataFieldsCntSet'] or 1 in gecsvFieldCntSet:
       report['GeoCSV_validated'] = False
-      report['field_size_1_warning'] = 'WARNING, geocsv field size or data ' + \
-          'row size of one, possible problem with delimiter, data row sizes: ' + \
+      report['WARNING_field_size_1'] = 'There is a geocsv field or data ' + \
+          'row of size one, this may be a delimiter problem, data row sizes: ' + \
           str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + \
           str(gecsvFieldCntSet)
       showGeoCSVFldsDict = True
@@ -379,7 +381,7 @@ class GeocsvHandler(object):
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
       report['GeoCSV_validated'] = False
-      report['data_field_null_warning'] = 'WARNING, at least one data field ' + \
+      report['WARNING_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
 
     # if any errors or warning are related to the field parameters in the
