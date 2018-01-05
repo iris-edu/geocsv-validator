@@ -127,6 +127,7 @@ class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
           body = info['body']
           print("***** GeocsvTornadoFormsHandler field_name: ", field_name, "  filename:",filename)
           print("***** GeocsvTornadoFormsHandler field_name: ", field_name, "  content_type:",content_type)
+          print("***** GeocsvTornadoFormsHandler field_name: ", field_name, "  type body:", type(body))
           print("***** GeocsvTornadoFormsHandler field_name: ", field_name, "  body:",body)
           tstream = string_stream(str(body.decode('utf-8')))
           for st in tstream:
@@ -135,12 +136,14 @@ class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
           MY_LINE_BREAK_CHARS = '\n\r'
           bo = io.BytesIO(body)
           myiter = bo.readlines().__iter__()
-          while True:
+          looping = True
+          while looping:
             try:
               rowStr = next(myiter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
-              print("--- ---***** GeocsvTornadoFormsHandler field_name: ", field_name, "  st:",st)
+              print("--- ---***** GeocsvTornadoFormsHandler field_name: ", field_name, "  rowStr:", rowStr)
             except StopIteration:
               print("--- ---***** STOPPING")
+              looping = False
       self.set_header("Content-Type", "text/plain")
       self.write("multipart processing" + "\n")
 
@@ -206,7 +209,7 @@ def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
         (r"/geows/geocsv/1/validate.*", GeocsvTornadoHandler),
-        (r"/geows/geocsv/1/vforms", GeocsvTornadoFormsHandler),
+        (r"/geows/geocsv/1/vforms.*", GeocsvTornadoFormsHandler),
         (r"/geows/geocsv/1/vpost", GeocsvTPostHandler),
         (r".*", DefaultGeocsvTornadoHandler)
     ])

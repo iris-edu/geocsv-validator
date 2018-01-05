@@ -26,9 +26,10 @@ class GeoCSVTests(unittest.TestCase):
 ##    self.t1.dispose()
 ##    self.t1 = None
 
-  def doValidate(self, target_url):
+  def do_geocsv_run(self, target_url, byte_str):
     pctl = main.GeocsvHandler.default_program_control()
     pctl['input_url'] = target_url
+    pctl['input_bytes'] = byte_str
     pctl['verbose'] = False
     pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
     pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
@@ -45,28 +46,30 @@ class GeoCSVTests(unittest.TestCase):
     geocsvObj = main.GeocsvHandler.GeocsvHandler(sys.stdout)
     return geocsvObj.doReport(pctl)
 
-  def goodIfTrue(self, target_url):
-    report = self.doValidate(target_url)
+  def goodIfTrue(self, target_url, byte_str):
+    report = self.do_geocsv_run(target_url, byte_str)
     if report['GeoCSV_validated'] == False:
       self.fail(report)
 
-  def goodIfFalse(self, target_url):
-    report = self.doValidate(target_url)
+  def goodIfFalse(self, target_url, byte_str):
+    report = self.do_geocsv_run(target_url, byte_str)
     if report['GeoCSV_validated'] == True:
       self.fail(report)
 
   # ******* tests
+  def testm2(self):
+    GeoCSVTests.goodIfFalse(self, None, None)
   def testm1(self):
-    GeoCSVTests.goodIfFalse(self, 'http://www.google.com/xyzcba')
+    GeoCSVTests.goodIfFalse(self, 'http://www.google.com/xyzcba', None)
   def test00(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'bad_url.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'bad_url.geocsv', None)
 
   # test URLs are from live services, i.e. subject to failure if service
   # is unavailable
   def test01(self):
     GeoCSVTests.goodIfTrue(self,
         'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
-        + 'query?format=text&showNumberFormatExceptions=true')
+        + 'query?format=text&showNumberFormatExceptions=true', None)
 
   def test02(self):
     GeoCSVTests.goodIfTrue(self,
@@ -75,37 +78,37 @@ class GeoCSVTests(unittest.TestCase):
         + '&format=text&starttime=2014-10-30&endtime=2014-11-01'\
         + '&regions=America,Asia,Europe,Pacific,Africa'\
         + '&latitudes=NH,NM,E,SM,SH&observatories=AAA,BEL,CKI,DED,EBR,FCC,GAN'\
-        + '&type=best&rate=minute')
+        + '&type=best&rate=minute', None)
 
   # test URLs are from files in test folder
   def test03(self):
-    GeoCSVTests.goodIfTrue(self, self.file_path + 'wovodat_sample1.geocsv')
+    GeoCSVTests.goodIfTrue(self, self.file_path + 'wovodat_sample1.geocsv', None)
   def test04(self):
-    GeoCSVTests.goodIfTrue(self, self.file_path + 'wovodat_sample2.geocsv')
+    GeoCSVTests.goodIfTrue(self, self.file_path + 'wovodat_sample2.geocsv', None)
   def test05(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'wovodat_sample3.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'wovodat_sample3.geocsv', None)
   def test06(self):
-    GeoCSVTests.goodIfTrue(self, self.file_path + 'wovodat_sample4.geocsv')
+    GeoCSVTests.goodIfTrue(self, self.file_path + 'wovodat_sample4.geocsv', None)
   def test07(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'R2R_sample1.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'R2R_sample1.geocsv', None)
   def test08(self):
-    GeoCSVTests.goodIfTrue(self, self.file_path + 'UNAVCO_sample1.geocsv')
+    GeoCSVTests.goodIfTrue(self, self.file_path + 'UNAVCO_sample1.geocsv', None)
   def test09(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'null_sample1.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'null_sample1.geocsv', None)
   def test10(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample1.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample1.geocsv', None)
   def test11(self):
-    GeoCSVTests.goodIfTrue(self, self.file_path + 'IRIS_sample2.geocsv')
+    GeoCSVTests.goodIfTrue(self, self.file_path + 'IRIS_sample2.geocsv', None)
   def test12(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'UNAVCO_sample2.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'UNAVCO_sample2.geocsv', None)
   def test13(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'UNAVCO_sample3.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'UNAVCO_sample3.geocsv', None)
   def test14(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample3.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample3.geocsv', None)
   def test15(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_station1.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_station1.geocsv', None)
   def test16(self):
-    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample4.geocsv')
+    GeoCSVTests.goodIfFalse(self, self.file_path + 'IRIS_sample4.geocsv', None)
 
 def run_test_suites(argv_list):
   global g_argv_list
@@ -114,6 +117,7 @@ def run_test_suites(argv_list):
   print ("**** run_test_suites context name: ", __name__)
 
   suite = unittest.TestSuite()
+  suite.addTest(GeoCSVTests("testm2"))
   suite.addTest(GeoCSVTests("testm1"))
   suite.addTest(GeoCSVTests("test00"))
   suite.addTest(GeoCSVTests("test02"))

@@ -49,8 +49,55 @@ class GeocsvHandler(object):
   def __init__(self, stdwriter):
     self.stdwriter = stdwriter
 
-  def get_response(self, pctl):
+  def get_url_response(self, pctl):
     result_for_get =  {'urlopen_response': None, 'except_report': None}
+    if pctl['input_url'] == None:
+      metrcs = self.createMetricsObj()
+      gecsv = self.createGeocsvObj(pctl['input_url'])
+      report = self.check_geocsv_fields(metrcs, gecsv)
+      report['ERROR_get_url_response_None'] = \
+          'None was entered for control parameter: input_url'
+      result_for_get['except_report'] = report
+      return result_for_get
+
+    try:
+      if pctl['verbose']:
+        self.stdwriter.write("******* opening input_url: " + \
+            pctl['input_url'] + "\n")
+      response = urlopen(pctl['input_url'])
+      result_for_get['url_response'] = response
+    except HTTPError as e:
+      metrcs = self.createMetricsObj()
+      gecsv = self.createGeocsvObj(pctl['input_url'])
+      report = self.check_geocsv_fields(metrcs, gecsv)
+      report['HTTPError_HTTPcode'] = str(e.code)
+      report['HTTPError_Exception'] = str(e)
+      result_for_get['except_report'] = report
+      return result_for_get
+    except Exception as e:
+      metrcs = self.createMetricsObj()
+      gecsv = self.createGeocsvObj(pctl['input_url'])
+      report = self.check_geocsv_fields(metrcs, gecsv)
+      report['ERROR_Exception'] = str(e)
+      result_for_get['except_report'] = report
+      return result_for_get
+
+    if pctl['verbose']:
+      self.stdwriter.write("******* received reply ...  datetime: " + \
+              str(datetime.datetime.now(pytz.utc).isoformat()) + "\n")
+    return result_for_get
+
+  def get_bytes_response(self, pctl):
+    result_for_get =  {'urlopen_response': None, 'except_report': None}
+    if pctl['input_url'] == None:
+      metrcs = self.createMetricsObj()
+      gecsv = self.createGeocsvObj(pctl['input_url'])
+      report = self.check_geocsv_fields(metrcs, gecsv)
+      report['ERROR_get_url_response_None'] = \
+          'None was entered for control parameter: input_url'
+      result_for_get['except_report'] = report
+      return result_for_get
+
     try:
       if pctl['verbose']:
         self.stdwriter.write("******* opening input_url: " + \
@@ -225,11 +272,17 @@ class GeocsvHandler(object):
           "******* GeocsvHandler starting validate  datetime: " + \
           str(datetime.datetime.now(pytz.utc).isoformat()) + "\n")
 
-    result_for_get = self.get_response(pctl)
-    if result_for_get['except_report'] != None:
-      return result_for_get['except_report']
+    if pctl['input_url']:
+      result_for_get = self.get_url_response(pctl)
     else:
+      result_for_get = self.get_bytes_response(pctl)
+
+    if result_for_get['except_report'] == None:
+      # no error report, continue
       response = result_for_get['url_response']
+    else:
+      # return error report
+      return result_for_get['except_report']
 
     gecsv = self.createGeocsvObj(pctl['input_url'])
 
@@ -405,6 +458,9 @@ def default_program_control():
 ##  pctl['input_url'] = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
 ##      + 'query?format=text&showNumberFormatExceptions=true'
   pctl['input_url'] = None
+  # note: if both input_url and input_bytes are set, input_url will be used
+  pctl['input_bytes'] = None  # of form b'line1\nline2\n'
+
   pctl['verbose'] = False
   pctl['octothorp'] = False  # show lines with # and respective metrics
   pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
@@ -440,6 +496,7 @@ def parse_cmd_lines():
   args = parser.parse_args()
 
   pctl['input_url'] = args.input_name
+  pctl['input_bytes'] = None
   pctl['verbose'] = args.verbose
   pctl['octothorp'] = args.octothorp
   pctl['unicode'] = args.unicode
