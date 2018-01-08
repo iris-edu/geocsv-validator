@@ -448,7 +448,8 @@ def str2bool(v):
   elif v.lower() in ('no', 'false', 'f', 'n', '0'):
       return False
   else:
-      raise argparse.ArgumentTypeError('Boolean value expected.')
+      raise argparse.ArgumentTypeError('String version of Boolean value' + \
+        ' expected, value given: ' + str(v))
 
 def default_program_control():
   pctl = {}
