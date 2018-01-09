@@ -63,7 +63,7 @@ class GeocsvHandler(object):
 
     try:
       if pctl['verbose']:
-        self.stdwriter.write("******* opening input_url: " + \
+        self.stdwriter.write("------- GeoCSV_Validate - opening input_url: " + \
             pctl['input_url'] + "\n")
       response = urlopen(pctl['input_url'])
       result_for_get['data_iter'] = response.readlines().__iter__()
@@ -84,7 +84,7 @@ class GeocsvHandler(object):
       return result_for_get
 
     if pctl['verbose']:
-      self.stdwriter.write("******* received reply, created data iterator,  " + \
+      self.stdwriter.write("------- GeoCSV_Validate - received reply, created data iterator,  " + \
           "datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()) + "\n")
     return result_for_get
 
@@ -101,7 +101,7 @@ class GeocsvHandler(object):
 
     try:
       if pctl['verbose']:
-        self.stdwriter.write("******* setup input_bytes: " + \
+        self.stdwriter.write("------- GeoCSV_Validate - setup input_bytes: " + \
             str(pctl['input_bytes']) + "\n")
       bytes_obj = io.BytesIO(pctl['input_bytes'])
       result_for_get['data_iter'] = bytes_obj.readlines().__iter__()
@@ -114,7 +114,7 @@ class GeocsvHandler(object):
       return result_for_get
 
     if pctl['verbose']:
-      self.stdwriter.write("******* read bytes iterator created,  datetime: " + \
+      self.stdwriter.write("------- GeoCSV_Validate - read bytes iterator created,  datetime: " + \
           str(datetime.datetime.now(pytz.utc).isoformat()) + "\n")
     return result_for_get
 
@@ -208,7 +208,7 @@ class GeocsvHandler(object):
       metrcs['dataFieldsCntSet'].add(len(row))
       if pctl['verbose']:
 ##        if (metrcs['rowCnt'] == 1):
-##          print("******* row by row metrics, metric fields: ", list(metrcs.keys()))
+##          print("------- GeoCSV_Validate - row by row metrics, metric fields: ", list(metrcs.keys()))
         self.stdwriter.write(str(list(metrcs.values())) + " line:" + \
             str(row) + "\n")
 
@@ -267,7 +267,7 @@ class GeocsvHandler(object):
     if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
       self.stdwriter.write("\n")
       self.stdwriter.write(
-          "******* GeocsvHandler starting validate  datetime: " + \
+          "------- GeoCSV_Validate - starting validate  datetime: " + \
           str(datetime.datetime.now(pytz.utc).isoformat()) + "\n")
 
     if pctl['input_url']:
@@ -286,7 +286,7 @@ class GeocsvHandler(object):
 
     if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
       # note: creating a list here to get py 2.x and 3.x to have simple lsit
-      self.stdwriter.write("******* metric fields: " + \
+      self.stdwriter.write("------- GeoCSV_Validate - metric fields: " + \
           str(list(metrcs.keys())) + "\n")
 
     looping = True
@@ -317,10 +317,10 @@ class GeocsvHandler(object):
               rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
               if pctl['verbose']:
                 self.stdwriter.write(
-                    "******* GeoCSV - parsed header and status parameters: " + \
+                    "------- GeoCSV_Validate - parsed header and status parameters: " + \
                     str(gecsv) + "\n")
                 self.stdwriter.write(
-                    "******* GeoCSV - after header read metrics: " + \
+                    "------- GeoCSV_Validate - after header read metrics: " + \
                     str(list(metrcs.values())) + "\n")
 
               # handle first non-geocsv line after finished reading geocsv header lines
@@ -336,7 +336,7 @@ class GeocsvHandler(object):
       except StopIteration:
         if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
           self.stdwriter.write(
-              "******* GeocsvHandler finished validate, datetime: " + \
+              "------- GeoCSV_Validate - finished validate, datetime: " + \
               str(datetime.datetime.now(pytz.utc).isoformat()) + "\n")
         looping = False
       finally:
