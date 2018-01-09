@@ -43,7 +43,7 @@ GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
     'standard_name_cv', 'title', 'history', 'institution', 'source',
     'comment', 'references'}.union(GEOCSV_COLUMN_VALUED_KEYWORDS)
 
-class GeocsvHandler(object):
+class GeocsvValidator(object):
 
   # stdwriter - an object with a write method, expecting, expecting
   #             something like sys.stdout or tornado.web.RequestHandler
@@ -509,6 +509,6 @@ if __name__ == "__main__" \
 
   pctl = parse_cmd_lines()
 
-  geocsvObj = GeocsvHandler(sys.stdout)
+  geocsvObj = GeocsvValidator(sys.stdout)
   geocsvObj.doReport(pctl)
 

@@ -10,7 +10,7 @@ from future.builtins.disabled import *
 
 import os
 import unittest
-import main.GeocsvHandler
+import main.GeocsvValidator
 import sys
 
 g_argv_list = False
@@ -27,7 +27,7 @@ class GeoCSVTests(unittest.TestCase):
 ##    self.t1 = None
 
   def do_geocsv_run(self, expected_outcome, target_url, byte_str):
-    pctl = main.GeocsvHandler.default_program_control()
+    pctl = main.GeocsvValidator.default_program_control()
     pctl['input_url'] = target_url
     pctl['input_bytes'] = byte_str
     pctl['verbose'] = False
@@ -43,7 +43,7 @@ class GeoCSVTests(unittest.TestCase):
       print("****** byte_str: ", byte_str)
       print("****** results:")
 
-    geocsvObj = main.GeocsvHandler.GeocsvHandler(sys.stdout)
+    geocsvObj = main.GeocsvValidator.GeocsvValidator(sys.stdout)
     report = geocsvObj.doReport(pctl)
     if report['GeoCSV_validated'] == expected_outcome:
       pass

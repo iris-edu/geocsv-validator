@@ -3,7 +3,7 @@
 import tornado.ioloop
 import tornado.web
 import tornado.httpclient
-import GeocsvHandler
+import GeocsvValidator
 import sys
 import io
 
@@ -23,11 +23,11 @@ class MainHandler(tornado.web.RequestHandler):
 class GeocsvTornadoHandler(tornado.web.RequestHandler):
   def initialize(self):
     print("***** GeocsvTornadoHandler initialize")
-    self.GeocsvHandler = GeocsvHandler.GeocsvHandler(self)
+    self.GeocsvValidator = GeocsvValidator.GeocsvValidator(self)
 
   def get(self):
     print("----- current_user: ", self.get_current_user())
-    pctl = GeocsvHandler.default_program_control()
+    pctl = GeocsvValidator.default_program_control()
 
     try:
       pctl['input_url'] = self.get_query_argument('input_url')
@@ -42,12 +42,12 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
     for param in GeoCSV_param_list:
         try:
           arg_val = self.get_query_argument(param)
-          pctl[param] = GeocsvHandler.str2bool(arg_val)
+          pctl[param] = GeocsvValidator.str2bool(arg_val)
         except Exception as e:
           # ignore, not required
           pass
 
-    self.GeocsvHandler.doReport(pctl)
+    self.GeocsvValidator.doReport(pctl)
 
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
@@ -55,7 +55,7 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
 class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
   def initialize(self):
     print("***** GeocsvTornadoFormsHandler initialize")
-    self.GeocsvHandler = GeocsvHandler.GeocsvHandler(self)
+    self.GeocsvValidator = GeocsvValidator.GeocsvValidator(self)
 
   def get(self):
     print("***** GeocsvTornadoFormsHandler get HTML page *****",)
@@ -108,12 +108,12 @@ class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
       print("***** Geocsv post query_arguments: ", self.request.query_arguments)
       print("***** Geocsv post connection: ", self.request.connection)
 
-    pctl = GeocsvHandler.default_program_control()
+    pctl = GeocsvValidator.default_program_control()
     for item in self.request.arguments:
       for parm in GeoCSV_param_list:
         if item == 'geocsv_' + parm:
           value = self.request.arguments[item][0].decode("utf-8")
-          pctl[parm] = GeocsvHandler.str2bool(value)
+          pctl[parm] = GeocsvValidator.str2bool(value)
 
     if self.request.headers['Content-Type'] == 'application/x-www-form-urlencoded':
       pctl['input_bytes'] = self.request.arguments['geocsv_texttext'][0]
@@ -144,7 +144,7 @@ class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
       # NOTE: notice return from here on error
       return
 
-    self.GeocsvHandler.doReport(pctl)
+    self.GeocsvValidator.doReport(pctl)
 
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
