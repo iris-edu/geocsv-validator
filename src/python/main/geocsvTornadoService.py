@@ -26,17 +26,31 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
     self.GeocsvValidator = GeocsvValidator.GeocsvValidator(self)
 
   def get(self):
-    print("----- current_user: ", self.get_current_user())
+    print("***** current_user: ", self.get_current_user())
+    print ("***** request.arguments: " , self.request.arguments)
     pctl = GeocsvValidator.default_program_control()
+
+    for param in self.request.arguments:
+      if param in GeoCSV_param_list or param == 'input_url':
+        # name matches, ok to continue
+        pass
+      else:
+        msg = "***** Error - unknown parameter: " + param
+        sys.stderr.write(msg + "\n")
+        self.set_header('Access-Control-Allow-Origin', '*')
+        self.set_header('Content-Type', 'text/plain; charset=UTF-8')
+        self.write(msg + "\n")
+        return
+
 
     try:
       pctl['input_url'] = self.get_query_argument('input_url')
-      print("----- input_url: ", pctl['input_url'])
+      print("***** input_url: ", pctl['input_url'])
     except Exception as e:
-      sys.stderr.write("----- from stderr URL required ex: " + str(e) + "\n")
+      sys.stderr.write("***** from stderr URL required ex: " + str(e) + "\n")
       self.set_header('Access-Control-Allow-Origin', '*')
       self.set_header('Content-Type', 'text/plain; charset=UTF-8')
-      self.write("----- input_url parameter required" + "\n")
+      self.write("***** input_url parameter required" + "\n")
       return
 
     for param in GeoCSV_param_list:
