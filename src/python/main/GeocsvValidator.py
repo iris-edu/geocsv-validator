@@ -101,8 +101,8 @@ class GeocsvValidator(object):
 
     try:
       if pctl['verbose']:
-        self.stdwriter.write("------- GeoCSV_Validate - setup input_bytes: " + \
-            str(pctl['input_bytes']) + "\n")
+        self.stdwriter.write("------- GeoCSV_Validate - setup input_bytes len: " + \
+            str(len(pctl['input_bytes'])) + "\n")
       bytes_obj = io.BytesIO(pctl['input_bytes'])
       result_for_get['data_iter'] = bytes_obj.readlines().__iter__()
     except Exception as e:
@@ -133,7 +133,7 @@ class GeocsvValidator(object):
 
       if rowStr[0:1] == '#':
         # count any octothorp line as geocsv line until exiting at first non-octothorp
-        metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
+        metrcs['geocsvHdrLineCnt'] = metrcs['geocsvHdrLineCnt'] + 1
 
         # do geocsv processing
         mObj = re.match(KEYWORD_REGEX, rowStr)
@@ -204,12 +204,12 @@ class GeocsvValidator(object):
     rowiter = iter(list([rowASCII]))
     csvreadr = csv.reader(rowiter, delimiter = delimiter)
     for row in csvreadr:
-      metrcs['rowCnt'] = metrcs['rowCnt'] + 1
+      metrcs['dataLineCnt'] = metrcs['dataLineCnt'] + 1
       metrcs['dataFieldsCntSet'].add(len(row))
       if pctl['verbose']:
-##        if (metrcs['rowCnt'] == 1):
+##        if (metrcs['dataLineCnt'] == 1):
 ##          print("------- GeoCSV_Validate - row by row metrics, metric fields: ", list(metrcs.keys()))
-        self.stdwriter.write(str(list(metrcs.values())) + " line:" + \
+        self.stdwriter.write("--verbose-- " + str(list(metrcs.values())) + " line:" + \
             str(row) + "\n")
 
       anyNulls = False
@@ -241,10 +241,10 @@ class GeocsvValidator(object):
     # gecsv - content related to geocsv header information
     metrcs = collections.OrderedDict()
     metrcs['totalLineCnt'] = 0
-    metrcs['rowCnt'] = 0
+    metrcs['dataLineCnt'] = 0
     metrcs['zeroLenCnt'] = 0
     metrcs['ignoreLineCnt'] = 0
-    metrcs['geocsvLineCnt'] = 0
+    metrcs['geocsvHdrLineCnt'] = 0
     metrcs['dataFieldsCntSet'] = set()
     metrcs['nullFieldCnt'] = 0
     metrcs['unicodeLineCnt'] = 0
@@ -312,7 +312,7 @@ class GeocsvValidator(object):
 
             else:
               gecsv['geocsv_start_found'] = True
-              metrcs['geocsvLineCnt'] = metrcs['geocsvLineCnt'] + 1
+              metrcs['geocsvHdrLineCnt'] = metrcs['geocsvHdrLineCnt'] + 1
 
               rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
               if pctl['verbose']:
