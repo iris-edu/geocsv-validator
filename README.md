@@ -1,16 +1,15 @@
-# GeoSciCloud Support
+# GeoCSV Validator
 
 Collections of Docker and Kubernetes Procedures
 
-- repository: ssh://repos/geoscicloud-deploy.git
-- 2017-06-06 - initial version
+- 2018-01-31 - current version loaded into iris-edu
 
 
 ##  Contents
 
 Folder |  Description
 --------------- | --------------------------
-dataselect_4 | example of docker context for fdsnws dataselect
-test_tools | collection of tools for load testing services
-kube_related | Notes, JSON, yaml, etc. for Kubernetes
-timeseries | docker image for irisws-timeseries web service
+validator | the command line tool
+service | trial tornado service
+test | unit test with some live data services called
+
