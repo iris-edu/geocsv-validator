@@ -8,7 +8,7 @@ from builtins import *
 from future.builtins.disabled import *
 
 import sys
-import test.handler_tests
+import handler_tests
 import re
 
 print("------------------------ python environment")
@@ -20,15 +20,16 @@ print("** start, context name: " + __name__ + "  argv: ", sys.argv)
 if 'one_test' in sys.argv:
   test_name = ''
   for item in sys.argv:
-    mObj = re.match('test[0-9][0-9]', item)
+    mObj = re.match('test[0-9][0-9]|testm1|testm2', item)
     if mObj == None:
-      pass
-      ##print("** one test - no test name for item: ", item)
+      ##pass
+      print("** WARNING - no test name for item: ", item, \
+        "  TBD - add proper argument parsing for \"one_test\" arg.")
     else:
       test_name = mObj.group(0)
       print("** one test - run test name: " + test_name)
-      test.handler_tests.run_one_test(sys.argv, test_name)
+      handler_tests.run_one_test(sys.argv, test_name)
       print("** one test - end test name: " + test_name)
 else:
-  test.handler_tests.run_test_suites(sys.argv)
+  handler_tests.run_test_suites(sys.argv)
   print("** end, context name: " + __name__)

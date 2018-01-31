@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
+import os
+import sys
+# setup to treat this folder as a peer to validator folder
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+
 import tornado.ioloop
 import tornado.web
 import tornado.httpclient
-import GeocsvValidator
-import sys
+import validator.GeocsvValidator
 import io
 
 GeoCSV_param_list = ['verbose', 'octothorp', 'unicode', 'null_fields', \

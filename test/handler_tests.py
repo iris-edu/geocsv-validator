@@ -9,9 +9,12 @@ from future.builtins.disabled import *
 
 
 import os
-import unittest
-import main.GeocsvValidator
 import sys
+# setup to treat this folder as a peer to validator folder
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+
+import unittest
+import validator.GeocsvValidator
 
 g_argv_list = False
 
@@ -21,13 +24,15 @@ class GeoCSVTests(unittest.TestCase):
     self.file_path = 'file://' +\
         os.path.dirname(os.path.realpath(__file__))\
          + '/resources/'
+
+    #rootDir     = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 ##    self.t1 = GeoCSVTests(self)
 ##  def tearDown(self):
 ##    self.t1.dispose()
 ##    self.t1 = None
 
   def do_geocsv_run(self, expected_outcome, target_url, byte_str):
-    pctl = main.GeocsvValidator.default_program_control()
+    pctl = validator.GeocsvValidator.default_program_control()
     pctl['input_url'] = target_url
     pctl['input_bytes'] = byte_str
     pctl['verbose'] = False
@@ -43,7 +48,7 @@ class GeoCSVTests(unittest.TestCase):
       print("****** byte_str: ", byte_str)
       print("****** results:")
 
-    geocsvObj = main.GeocsvValidator.GeocsvValidator(sys.stdout)
+    geocsvObj = validator.GeocsvValidator.GeocsvValidator(sys.stdout)
     report = geocsvObj.doReport(pctl)
     if report['GeoCSV_validated'] == expected_outcome:
       pass
