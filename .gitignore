@@ -18,5 +18,12 @@ nb-configuration.xml
 .svn
 
 # python
-*.pyc
+**/*.pyc
 
+# vi
+**/*.*.swp
+
+# others
+**/*.tar
+**/*.log
+**/*.war
