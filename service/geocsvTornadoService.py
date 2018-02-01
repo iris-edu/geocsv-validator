@@ -27,7 +27,7 @@ class MainHandler(tornado.web.RequestHandler):
 class GeocsvTornadoHandler(tornado.web.RequestHandler):
   def initialize(self):
     print("***** GeocsvTornadoHandler initialize")
-    self.GeocsvValidator = GeocsvValidator.GeocsvValidator(self)
+    self.GeocsvValidator = validator.GeocsvValidator.GeocsvValidator(self)
 
   def get(self):
     print("***** current_user: ", self.get_current_user())
@@ -60,7 +60,7 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
     for param in GeoCSV_param_list:
         try:
           arg_val = self.get_query_argument(param)
-          pctl[param] = GeocsvValidator.str2bool(arg_val)
+          pctl[param] = validator.GeocsvValidator.str2bool(arg_val)
         except Exception as e:
           # ignore, not required
           pass
@@ -73,7 +73,7 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
 class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
   def initialize(self):
     print("***** GeocsvTornadoFormsHandler initialize")
-    self.GeocsvValidator = GeocsvValidator.GeocsvValidator(self)
+    self.GeocsvValidator = validator.GeocsvValidator.GeocsvValidator(self)
 
   def get(self):
     print("***** GeocsvTornadoFormsHandler get HTML page *****",)
