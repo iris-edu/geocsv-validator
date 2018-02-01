@@ -32,7 +32,7 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
   def get(self):
     print("***** current_user: ", self.get_current_user())
     print ("***** request.arguments: " , self.request.arguments)
-    pctl = GeocsvValidator.default_program_control()
+    pctl = validator.GeocsvValidator.default_program_control()
 
     for param in self.request.arguments:
       if param in GeoCSV_param_list or param == 'input_url':
@@ -126,12 +126,12 @@ class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
       print("***** Geocsv post query_arguments: ", self.request.query_arguments)
       print("***** Geocsv post connection: ", self.request.connection)
 
-    pctl = GeocsvValidator.default_program_control()
+    pctl = validator.GeocsvValidator.default_program_control()
     for item in self.request.arguments:
       for parm in GeoCSV_param_list:
         if item == 'geocsv_' + parm:
           value = self.request.arguments[item][0].decode("utf-8")
-          pctl[parm] = GeocsvValidator.str2bool(value)
+          pctl[parm] = validator.GeocsvValidator.str2bool(value)
 
     if self.request.headers['Content-Type'] == 'application/x-www-form-urlencoded':
       pctl['input_bytes'] = self.request.arguments['geocsv_texttext'][0]
