@@ -13,6 +13,7 @@ import io
 
 GeoCSV_param_list = ['verbose', 'octothorp', 'unicode', 'null_fields', \
         'write_report']
+CONFIG_REDIRECT_URL = 'http://cube1:8988'
 
 class MainHandler(tornado.web.RequestHandler):
   def initialize(self):
@@ -22,7 +23,8 @@ class MainHandler(tornado.web.RequestHandler):
     print("** MainHandler get")
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
-    self.write("***** get called on base url")
+    ##self.write("***** get called on base url")
+    self.redirect(CONFIG_REDIRECT_URL, permanent=False, status=None)
 
 class GeocsvTornadoHandler(tornado.web.RequestHandler):
   def initialize(self):
@@ -167,6 +169,19 @@ class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
 
+class GeocsvTornadoVersionHandler(tornado.web.RequestHandler):
+  def initialize(self):
+    print("***** GeocsvTornadoVersionHandler initialize")
+
+  def get(self):
+    print("***** default current_user: ", self.get_current_user())
+
+    print("***** doing GeocsvTornadoVersionHandler version  *****",)
+    self.set_header('Access-Control-Allow-Origin', '*')
+    self.set_header('Content-Type', 'text/plain; charset=UTF-8')
+    self.write("%%%%%% GeocsvValidator version: beta 0.9")
+    self.write("\n%%%%%% geocsvTornadoService version: alpha prototype 0.3")
+
 class DefaultGeocsvTornadoHandler(tornado.web.RequestHandler):
   def initialize(self):
     print("***** DefaultGeocsvTornadoHandler initialize")
@@ -174,10 +189,14 @@ class DefaultGeocsvTornadoHandler(tornado.web.RequestHandler):
   def get(self):
     print("***** default current_user: ", self.get_current_user())
 
-    print("***** doing default action  for unrecognized URLs *****",)
+    print("***** doing default action, redirect  for unrecognized URLs *****",)
+
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
-    self.write("%%%%%% default action for unrecognized URLs")
+    # TBD - replace write with redirect?
+    ##self.write("%%%%%% default action for unrecognized URLs")
+
+    self.redirect(CONFIG_REDIRECT_URL, permanent=False, status=None)
 
 # from https://stackoverflow.com/questions/21843693/creating-stream-to-iterate-over-from-string-in-python
 def string_stream(s, separators="\n"):
@@ -193,6 +212,7 @@ def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
         (r"/geows/geocsv/1/validate.*", GeocsvTornadoHandler),
+        (r"/geows/geocsv/1/version.*", GeocsvTornadoVersionHandler),
         (r"/geows/geocsv/1/vforms.*", GeocsvTornadoFormsHandler),
         (r".*", DefaultGeocsvTornadoHandler)
     ])
