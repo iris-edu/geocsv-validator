@@ -474,7 +474,7 @@ def parse_cmd_lines():
       'Read a GeoCSV file and check for conformance against the recommended ' + \
       'standard, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
 
-  parser.add_argument("--input_name", help='Input a URL, http:// or file://', \
+  parser.add_argument("--input_url", help='Input a URL, http:// or file://', \
       type=str, required=True, default='nameRequired')
   parser.add_argument('--verbose', \
       help='Show metrics for every data line', type=str2bool, default=False)
@@ -493,7 +493,7 @@ def parse_cmd_lines():
 
   args = parser.parse_args()
 
-  pctl['input_url'] = args.input_name
+  pctl['input_url'] = args.input_url
   pctl['input_bytes'] = None
   pctl['verbose'] = args.verbose
   pctl['octothorp'] = args.octothorp
