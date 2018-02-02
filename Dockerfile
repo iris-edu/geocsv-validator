@@ -17,7 +17,6 @@ RUN pip install pytz && pip install future && pip install tornado
 
 ADD validator/  /geocsv_vali/validator/
 ADD service/ /geocsv_vali/service/
-ADD run_geocsv_in_docker.bash /geocsv_vali/
 
 # run python unbuffered so as to see output in docker logs ...
 CMD ["python", "-u", "/geocsv_vali/service/geocsvTornadoService.py"]
