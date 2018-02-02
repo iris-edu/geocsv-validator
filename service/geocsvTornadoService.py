@@ -13,7 +13,6 @@ import io
 
 GeoCSV_param_list = ['verbose', 'octothorp', 'unicode', 'null_fields', \
         'write_report']
-CONFIG_REDIRECT_URL = 'http://cube1:8988'
 
 class MainHandler(tornado.web.RequestHandler):
   def initialize(self):
@@ -24,7 +23,7 @@ class MainHandler(tornado.web.RequestHandler):
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
     ##self.write("***** get called on base url")
-    self.redirect(CONFIG_REDIRECT_URL, permanent=False, status=None)
+    self.redirect(GEOCSV_DOCUMENT_URL, permanent=False, status=None)
 
 class GeocsvTornadoHandler(tornado.web.RequestHandler):
   def initialize(self):
@@ -196,7 +195,7 @@ class DefaultGeocsvTornadoHandler(tornado.web.RequestHandler):
     # TBD - replace write with redirect?
     ##self.write("%%%%%% default action for unrecognized URLs")
 
-    self.redirect(CONFIG_REDIRECT_URL, permanent=False, status=None)
+    self.redirect(GEOCSV_DOCUMENT_URL, permanent=False, status=None)
 
 # from https://stackoverflow.com/questions/21843693/creating-stream-to-iterate-over-from-string-in-python
 def string_stream(s, separators="\n"):
@@ -215,13 +214,24 @@ def make_app():
         (r"/geows/geocsv/1/version.*", GeocsvTornadoVersionHandler),
         (r"/geows/geocsv/1/vforms.*", GeocsvTornadoFormsHandler),
         (r".*", DefaultGeocsvTornadoHandler)
+        # note alternative for / (r'/(.*)', tornado.web.StaticFileHandler, {'path': static_path}),
+        # static_path should be the path to your apache-served website root directory
+        # see https://stackoverflow.com/questions/27878813/running-tornado-hosting-app-on-different-port
     ])
 
 if __name__ == "__main__":
-    app = make_app()
-    app.listen(8989)
-    print("***** listening on 8989")
-    try:
-      tornado.ioloop.IOLoop.current().start()
-    except KeyboardInterrupt:
-      print("***** KeyboardInterrupt handled")
+
+  GEOCSV_LISTENING_PORT = os.environ.get('GEOCSV_LISTENING_PORT', '8989')
+  print("***** listening on " + GEOCSV_LISTENING_PORT)
+
+  # the document URL could be a static page, swagger-ui, etc.
+  GEOCSV_DOCUMENT_URL = os.environ.get('GEOCSV_DOCUMENT_URL', 'http://localhost:8988')
+  print("***** GEOCSV_DOCUMENT_URL: ", GEOCSV_DOCUMENT_URL)
+
+  app = make_app()
+  app.listen(GEOCSV_LISTENING_PORT)
+
+  try:
+    tornado.ioloop.IOLoop.current().start()
+  except KeyboardInterrupt:
+    print("***** KeyboardInterrupt handled")
