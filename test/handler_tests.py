@@ -21,7 +21,7 @@ g_argv_list = False
 class GeoCSVTests(unittest.TestCase):
   def setUp(self):
     # Note: this breaks if these files are relocated
-    self.file_path = 'file://' +\
+    self.rsrc_path = 'file://' +\
         os.path.dirname(os.path.realpath(__file__))\
          + '/resources/'
 
@@ -90,59 +90,64 @@ IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1995-07-14T00:00:0
     self.do_geocsv_run(False, 'http://www.google.com/xyzcba', None)
 
   def test00(self):
-    self.do_geocsv_run(False, self.file_path + 'bad_url.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'bad_url.geocsv', None)
 
   # test URLs are from live services, i.e. subject to failure if service
   # is unavailable
   def test01(self):
-    self.do_geocsv_run(True,
-        'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
-        + 'query?format=text&showNumberFormatExceptions=true', None)
+    # deactivate external dependency
+    ##self.do_geocsv_run(True,
+    ##    'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
+    ##    + 'query?format=text&showNumberFormatExceptions=true', None)
+    self.do_geocsv_run(True, self.rsrc_path + 'wovodat_sample1.geocsv', None)
 
   def test02(self):
-    self.do_geocsv_run(True,
-        'http://geows.ds.iris.edu/geows-uf/intermagnet/1/'\
-        + 'query?email=geows@iris.washington.edu&accept=true&content=files'\
-        + '&format=text&starttime=2014-10-30&endtime=2014-11-01'\
-        + '&regions=America,Asia,Europe,Pacific,Africa'\
-        + '&latitudes=NH,NM,E,SM,SH&observatories=AAA,BEL,CKI,DED,EBR,FCC,GAN'\
-        + '&type=best&rate=minute', None)
+    # deactivate external dependency
+    ##self.do_geocsv_run(True,
+    ##    'http://geows.ds.iris.edu/geows-uf/intermagnet/1/'\
+    ##    + 'query?email=geows@iris.washington.edu&accept=true&content=files'\
+    ##    + '&format=text&starttime=2014-10-30&endtime=2014-11-01'\
+    ##    + '&regions=America,Asia,Europe,Pacific,Africa'\
+    ##    + '&latitudes=NH,NM,E,SM,SH&observatories=AAA,BEL,CKI,DED,EBR,FCC,GAN'\
+    ##    + '&type=best&rate=minute', None)
+    self.do_geocsv_run(True, self.rsrc_path + 'Intermagnet_sample1.geocsv', None)
 
   # test URLs are from files in test folder
   def test03(self):
-    self.do_geocsv_run(True, self.file_path + 'wovodat_sample1.geocsv', None)
+    self.do_geocsv_run(True, self.rsrc_path + 'wovodat_sample1.geocsv', None)
   def test04(self):
-    self.do_geocsv_run(True, self.file_path + 'wovodat_sample2.geocsv', None)
+    self.do_geocsv_run(True, self.rsrc_path + 'wovodat_sample2.geocsv', None)
   def test05(self):
-    self.do_geocsv_run(False, self.file_path + 'wovodat_sample3.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'wovodat_sample3.geocsv', None)
   def test06(self):
-    self.do_geocsv_run(True, self.file_path + 'wovodat_sample4.geocsv', None)
+    self.do_geocsv_run(True, self.rsrc_path + 'wovodat_sample4.geocsv', None)
   def test07(self):
-    self.do_geocsv_run(False, self.file_path + 'R2R_sample1.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'R2R_sample1.geocsv', None)
   def test08(self):
-    self.do_geocsv_run(True, self.file_path + 'UNAVCO_sample1.geocsv', None)
+    self.do_geocsv_run(True, self.rsrc_path + 'UNAVCO_sample1.geocsv', None)
   def test09(self):
-    self.do_geocsv_run(False, self.file_path + 'null_sample1.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'null_sample1.geocsv', None)
   def test10(self):
-    self.do_geocsv_run(False, self.file_path + 'IRIS_sample1.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'IRIS_sample1.geocsv', None)
   def test11(self):
-    self.do_geocsv_run(True, self.file_path + 'IRIS_sample2.geocsv', None)
+    self.do_geocsv_run(True, self.rsrc_path + 'IRIS_sample2.geocsv', None)
   def test12(self):
-    self.do_geocsv_run(False, self.file_path + 'UNAVCO_sample2.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'UNAVCO_sample2.geocsv', None)
   def test13(self):
-    self.do_geocsv_run(False, self.file_path + 'UNAVCO_sample3.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'UNAVCO_sample3.geocsv', None)
   def test14(self):
-    self.do_geocsv_run(False, self.file_path + 'IRIS_sample3.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'IRIS_sample3.geocsv', None)
   def test15(self):
-    self.do_geocsv_run(False, self.file_path + 'IRIS_station1.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'IRIS_station1.geocsv', None)
   def test16(self):
-    self.do_geocsv_run(False, self.file_path + 'IRIS_sample4.geocsv', None)
+    self.do_geocsv_run(False, self.rsrc_path + 'IRIS_sample4.geocsv', None)
 
 def run_test_suites(argv_list):
   global g_argv_list
   g_argv_list = argv_list
 
-  print ("**** run_test_suites context name: ", __name__)
+  print("**** ----------------------------------------------")
+  print ("**** run_test_suites, context: ", __name__)
 
   suite = unittest.TestSuite()
   suite.addTest(GeoCSVTests("testm4"))
@@ -174,7 +179,8 @@ def run_one_test(argv_list, test_name):
   global g_argv_list
   g_argv_list = argv_list
 
-  print ("**** run_one_test context name: ", __name__)
+  print("**** ----------------------------------------------")
+  print("**** run_one_test, context: ", __name__, "  test_name: ", test_name)
 
   runner = unittest.TextTestRunner()
   runner.run(GeoCSVTests(test_name))

@@ -1,0 +1,27 @@
+# dataset: GeoCSV 2.0 
+# delimiter: |
+observatory|date|available|filename|dataType|name
+AAA|2014-10-30|true|aaa20141030dmin.min.gz|definitive|Alma Ata
+AAA|2014-10-31|true|aaa20141031dmin.min.gz|definitive|Alma Ata
+AAA|2014-11-01|true|aaa20141101dmin.min.gz|definitive|Alma Ata
+BEL|2014-10-30|true|bel20141030dmin.min.gz|definitive|Belsk
+BEL|2014-10-31|true|bel20141031dmin.min.gz|definitive|Belsk
+BEL|2014-11-01|true|bel20141101dmin.min.gz|definitive|Belsk
+CKI|2014-10-30|true|cki20141030dmin.min.gz|definitive|Cocos-Keeling Islands
+CKI|2014-10-31|true|cki20141031dmin.min.gz|definitive|Cocos-Keeling Islands
+CKI|2014-11-01|true|cki20141101dmin.min.gz|definitive|Cocos-Keeling Islands
+DED|2014-10-30|true|ded20141030dmin.min.gz|definitive|Deadhorse
+DED|2014-10-31|true|ded20141031dmin.min.gz|definitive|Deadhorse
+DED|2014-11-01|true|ded20141101dmin.min.gz|definitive|Deadhorse
+EBR|2014-10-30|true|ebr20141030dmin.min.gz|definitive|Ebro
+EBR|2014-10-31|true|ebr20141031dmin.min.gz|definitive|Ebro
+EBR|2014-11-01|true|ebr20141101dmin.min.gz|definitive|Ebro
+FCC|2014-10-30|true|fcc20141030dmin.min.gz|definitive|Fort Churchill
+FCC|2014-10-31|true|fcc20141031dmin.min.gz|definitive|Fort Churchill
+FCC|2014-11-01|true|fcc20141101dmin.min.gz|definitive|Fort Churchill
+GAN|2014-10-30|true|gan20141030qmin.min|quasi-definitive|Gan
+GAN|2014-10-31|true|gan20141031qmin.min|quasi-definitive|Gan
+GAN|2014-11-01|true|gan20141101qmin.min|quasi-definitive|Gan
+# no files returned from this query
+# handler_totalTimeMs: 1577
+# handler_metrics: [getFilesQueryCount:1, noResultsFileQueryCount:0, skippedObservatoryCount:357, postFilesRequestCount:0, postRequestErrorAndSkipCount:0, postRequestProcessingErrorCount:0, getZipFileCount:0, unGzipTryCount:0, unGzipFailedCount:0, unZipFileCount:0, unZipEntryTryCount:0, unZipEntryFailedCount:0, zipRequestRetryCount:0, zipRequestDownloadSkippedCount:0, unZipEntryBufferSizeFailedCount:0]

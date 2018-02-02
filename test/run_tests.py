@@ -11,25 +11,35 @@ import sys
 import handler_tests
 import re
 
-print("------------------------ python environment")
+print("** ------------------------------------------------")
+print("** start tests, context: " + __name__ + "  argv: ", sys.argv)
+
+print("** ------------------------------------------------")
+print("** python environment:")
 print(sys.version)
-print("-------------------------------------------")
 
+# quick and dirty for one or a few test:
+#   check for arg 'doTests'
+#   if found loop through the args looking for a regex name match
+#   else do all tests
+#
+# e.g. run_tests.py doTests testm1
 
-print("** start, context name: " + __name__ + "  argv: ", sys.argv)
-if 'one_test' in sys.argv:
+if 'doTests' in sys.argv:
   test_name = ''
   for item in sys.argv:
-    mObj = re.match('test[0-9][0-9]|testm1|testm2', item)
+    mObj = re.match('test[0-9][0-9]|testm4|testm3|testm2|testm1', item)
     if mObj == None:
-      ##pass
-      print("** WARNING - no test name for item: ", item, \
-        "  TBD - add proper argument parsing for \"one_test\" arg.")
+      if item == 'doTests' or item == sys.argv[0]:
+        pass
+      else:
+        print("** ------------------------------------------------")
+        print("** WARNING - unknown test name: ", item)
     else:
-      test_name = mObj.group(0)
-      print("** one test - run test name: " + test_name)
+      test_name = mObj.group(0) # i.e. same as item
       handler_tests.run_one_test(sys.argv, test_name)
-      print("** one test - end test name: " + test_name)
 else:
   handler_tests.run_test_suites(sys.argv)
-  print("** end, context name: " + __name__)
+
+print("** ------------------------------------------------")
+print("** end tests, context: " + __name__)
