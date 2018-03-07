@@ -12,6 +12,13 @@ import handler_tests
 import re
 
 print("** ------------------------------------------------")
+print("** Run unit tests")
+print("**")
+print("** to run indiviudal tests, put doTests followed by one or more test method names")
+print("** e.g. ./run_tests.py doTests test06 test17")
+print("**")
+print("** to get run report, set write_report in pctl in handler_tests.py to true")
+print("**")
 print("** start tests, context: " + __name__ + "  argv: ", sys.argv)
 
 print("** ------------------------------------------------")
