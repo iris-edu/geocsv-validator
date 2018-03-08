@@ -50,37 +50,43 @@ class GeocsvValidator(object):
   def __init__(self, stdwriter):
     self.stdwriter = stdwriter
 
-  def get_url_iterator(self, pctl):
+  def get_resrc_iterator(self, pctl):
     result_for_get =  {'data_iter': None, 'except_report': None}
-    if pctl['input_url'] == None:
+    if pctl['input_resrc'] == None:
       metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_url'], pctl['input_bytes'])
+      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
       report = self.check_geocsv_fields(metrcs, gecsv)
-      report['ERROR_get_url_iterator_None'] = \
-          'None was entered for control parameter: input_url'
+      report['ERROR_get_resrc_iterator_None'] = \
+          'None was entered for control parameter: input_resrc'
       result_for_get['except_report'] = report
       return result_for_get
 
     try:
       self.report_verbose(pctl,
-          "------- GeoCSV_Validate - opening input_url: " +  pctl['input_url'])
-      response = urlopen(pctl['input_url'])
+          "------- GeoCSV_Validate - opening input_resrc: " +  pctl['input_resrc'])
+      response = urlopen(pctl['input_resrc'])
       result_for_get['data_iter'] = response.readlines().__iter__()
     except HTTPError as e:
       metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_url'], pctl['input_bytes'])
+      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
       report = self.check_geocsv_fields(metrcs, gecsv)
       report['HTTPError_HTTPcode'] = str(e.code)
       report['HTTPError_Exception'] = str(e)
       result_for_get['except_report'] = report
       return result_for_get
     except Exception as e:
-      metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_url'], pctl['input_bytes'])
-      report = self.check_geocsv_fields(metrcs, gecsv)
-      report['ERROR_Exception'] = str(e)
-      result_for_get['except_report'] = report
-      return result_for_get
+      try:
+        # input name did not work as URL, now try as a file
+        file = open(pctl['input_resrc'], 'rb')
+        result_for_get['data_iter'] = file.readlines().__iter__()
+      except Exception as e2:
+        metrcs = self.createMetricsObj()
+        gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
+        report = self.check_geocsv_fields(metrcs, gecsv)
+        report['ERROR_Exception'] = "Failed URL read: " + str(e) + \
+            "  and file read: " + str(e2)
+        result_for_get['except_report'] = report
+        return result_for_get
 
     self.report_verbose(pctl, \
         "------- GeoCSV_Validate - received reply, created data iterator,  " + \
@@ -91,7 +97,7 @@ class GeocsvValidator(object):
     result_for_get =  {'data_iter': None, 'except_report': None}
     if pctl['input_bytes'] == None:
       metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_url'], pctl['input_bytes'])
+      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
       report = self.check_geocsv_fields(metrcs, gecsv)
       report['ERROR_get_bytes_iterator_None'] = \
           'None was entered for control parameter: input_bytes'
@@ -106,7 +112,7 @@ class GeocsvValidator(object):
       result_for_get['data_iter'] = bytes_obj.readlines().__iter__()
     except Exception as e:
       metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_url'], pctl['input_bytes'])
+      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
       report = self.check_geocsv_fields(metrcs, gecsv)
       report['ERROR_Exception'] = str(e)
       result_for_get['except_report'] = report
@@ -247,8 +253,8 @@ class GeocsvValidator(object):
 
     return metrcs
 
-  def createGeocsvObj(self, input_url, input_bytes):
-    gecsv = {'geocsv_start_found': False, 'input_url': input_url, \
+  def createGeocsvObj(self, input_resrc, input_bytes):
+    gecsv = {'geocsv_start_found': False, 'input_resrc': input_resrc, \
         'delimiter': ',', 'other_keywords': {}}
     # don't put the raw bytes in this structure
     if input_bytes == None:
@@ -288,7 +294,7 @@ class GeocsvValidator(object):
       "------- GeoCSV_Validate - starting validate  datetime111: " + \
       str(datetime.datetime.now(pytz.utc).isoformat()))
 
-    gecsv = self.createGeocsvObj(pctl['input_url'], pctl['input_bytes'])
+    gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
 
     # note: creating a list of keys here for compatability between py 2.x and 3.x
     msglist = list(metrcs.keys())
@@ -332,7 +338,7 @@ class GeocsvValidator(object):
               # and reset metrics and geocsv obj and continue validate
               metrcs = self.createMetricsObj()
               metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
-              gecsv = self.createGeocsvObj(pctl['input_url'], pctl['input_bytes'])
+              gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
 
               self.processGeocsvHeader(data_iter, gecsv, metrcs, pctl)
             continue
@@ -376,8 +382,8 @@ class GeocsvValidator(object):
       self.stdwriter.write(rstr)
 
   def doReport(self, pctl):
-    if pctl['input_url']:
-      result_for_get = self.get_url_iterator(pctl)
+    if pctl['input_resrc']:
+      result_for_get = self.get_resrc_iterator(pctl)
     else:
       result_for_get = self.get_bytes_iterator(pctl)
 
@@ -396,7 +402,7 @@ class GeocsvValidator(object):
   def check_geocsv_fields(self, metrcs, gecsv):
     report = collections.OrderedDict()
     report['GeoCSV_validated'] = True
-    report['input_url'] = gecsv['input_url']
+    report['input_resrc'] = gecsv['input_resrc']
     report['input_bytes_len'] = gecsv['input_bytes_len']
     report['metrics'] = metrcs
 
@@ -473,10 +479,10 @@ def str2bool(v):
 
 def default_program_control():
   pctl = {}
-##  pctl['input_url'] = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
+##  pctl['input_resrc'] = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
 ##      + 'query?format=text&showNumberFormatExceptions=true'
-  pctl['input_url'] = None
-  # note: if both input_url and input_bytes are set, input_url will be used
+  pctl['input_resrc'] = None
+  # note: if both input_resrc and input_bytes are specified, input_resrc will be used
   pctl['input_bytes'] = None  # of form b'line1\nline2\n'
 
   pctl['verbose'] = False
@@ -494,7 +500,7 @@ def parse_cmd_lines():
       'Read a GeoCSV file and check for conformance against the recommended ' + \
       'standard, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
 
-  parser.add_argument("--input_url", help='Input a URL, http:// or file://', \
+  parser.add_argument("--input_resrc", help='Input a URL or filename', \
       type=str, required=True, default='nameRequired')
   parser.add_argument('--verbose', \
       help='Show metrics for every data line', type=str2bool, default=False)
@@ -513,7 +519,7 @@ def parse_cmd_lines():
 
   args = parser.parse_args()
 
-  pctl['input_url'] = args.input_url
+  pctl['input_resrc'] = args.input_resrc
   pctl['input_bytes'] = None
   pctl['verbose'] = args.verbose
   pctl['octothorp'] = args.octothorp

@@ -40,7 +40,7 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
     pctl = validator.GeocsvValidator.default_program_control()
 
     for param in self.request.arguments:
-      if param in GeoCSV_param_list or param == 'input_url':
+      if param in GeoCSV_param_list or param == 'input_resrc':
         # name matches, ok to continue
         pass
       else:
@@ -53,13 +53,13 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
 
 
     try:
-      pctl['input_url'] = self.get_query_argument('input_url')
-      print("***** input_url: ", pctl['input_url'])
+      pctl['input_resrc'] = self.get_query_argument('input_resrc')
+      print("***** input_resrc: ", pctl['input_resrc'])
     except Exception as e:
       sys.stderr.write("***** from stderr URL required ex: " + str(e) + "\n")
       self.set_header('Access-Control-Allow-Origin', '*')
       self.set_header('Content-Type', 'text/plain; charset=UTF-8')
-      self.write("***** input_url parameter required" + "\n")
+      self.write("***** input_resrc parameter required" + "\n")
       return
 
     for param in GeoCSV_param_list:

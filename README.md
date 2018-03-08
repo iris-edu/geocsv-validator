@@ -20,12 +20,12 @@ The current version is can be used as follows:
 ``` bash
 ./GeocsvValidator.py
 
-usage: GeocsvValidator.py [-h] --input_url INPUT_URL [--verbose VERBOSE]
+usage: GeocsvValidator.py [-h] --input_resrc INPUT_RESRC [--verbose VERBOSE]
                           [--octothorp OCTOTHORP] [--unicode UNICODE]
                           [--null_fields NULL_FIELDS]
                           [--write_report WRITE_REPORT]
 
-./GeocsvValidator.py --input_url 'http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv'
+./GeocsvValidator.py --input_resrc 'http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv'
 # this run will show 174 lines read and a validation of False because at least one field is null, in this particular case 63 fields are null.
 
 ```
@@ -33,8 +33,7 @@ usage: GeocsvValidator.py [-h] --input_url INPUT_URL [--verbose VERBOSE]
 ## Running the tornado server
 
 ``` bash
-./
-geocsvTornadoService.py
+./geocsvTornadoService.py
 
 # by default, the service is listening on port 8989
 # and will refer to http://localhost:8988 for documentation.
@@ -43,7 +42,11 @@ geocsvTornadoService.py
 # GEOCSV_LISTENING_PORT and GEOCSV_DOCUMENT_URL
 
 # When the server is running, the following features are links are currently active.
-http://localhost:8989/geows/geocsv/1/validate?input_url=http://service.iris.edu/irisws/availability/1/extent?network=IU%26station=ANMO%26format=geocsv
+Sample queries
+
+http://localhost:8989/geows/geocsv/1/validate?input_resrc=http://service.iris.edu/irisws/availability/1/extent?network=IU%26station=ANMO%26format=geocsv
+
+http://localhost:8989/geows/geocsv/1/validate?input_resrc=http://service.iris.edu/fdsnws/station/1/query?level=station%26format=geocsv%26includecomments=true%26nodata=404
 
 http://localhost:8989/geows/geocsv/1/version
 
@@ -56,6 +59,12 @@ http://localhost:8989/geows/geocsv/1/vforms
 # use this script to build the docker image
 ./build_geocsv_vali.bash
 
-# to run
+# to run locally
 docker run -ti -p 8989:8989 --name geocsv_vali geocsv_vali:v1
+
+# to deploy with a second server producing documentation
+sudo docker run -d -p 8989:8950 --env GEOCSV_LISTENING_PORT='8950' --env GEOCSV_DOCUMENT_URL='http://cube1:8988' --name geocsv_vali geocsv_vali:v1
+
+
+
 ```

@@ -33,7 +33,7 @@ class GeoCSVTests(unittest.TestCase):
 
   def do_geocsv_run(self, expected_outcome, target_url, byte_str):
     pctl = validator.GeocsvValidator.default_program_control()
-    pctl['input_url'] = target_url
+    pctl['input_resrc'] = target_url
     pctl['input_bytes'] = byte_str
     pctl['verbose'] = False
     pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
