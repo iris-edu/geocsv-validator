@@ -273,11 +273,11 @@ class GeocsvValidator(object):
     # handle first non-geocsv line after finished reading geocsv header lines
     self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl)
 
-  def report_verbose(self, pctl, str1):
+  def report_any(self, pctl, str1):
     if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
       self.stdwriter.write(str1 + "\n")
 
-  def report_any(self, pctl, str1):
+  def report_verbose(self, pctl, str1):
     if pctl['verbose']:
       self.stdwriter.write(str1 + "\n")
 
@@ -384,11 +384,11 @@ class GeocsvValidator(object):
     if result_for_get['except_report'] == None:
       # no error report, continue
       data_iter = result_for_get['data_iter']
+      report = self.validate(pctl, data_iter)
     else:
       # return error report
-      return result_for_get['except_report']
+      report = result_for_get['except_report']
 
-    report = self.validate(pctl, data_iter)
     self.writeReport(pctl, report)
 
     return report
