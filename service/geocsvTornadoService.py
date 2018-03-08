@@ -10,13 +10,16 @@ import tornado.web
 import tornado.httpclient
 import validator.GeocsvValidator
 import io
+import datetime
+import pytz
 
 GeoCSV_param_list = ['verbose', 'octothorp', 'unicode', 'null_fields', \
         'write_report']
 
 class MainHandler(tornado.web.RequestHandler):
   def initialize(self):
-    print("***** MainHandler initialize")
+    print("***** MainHandler initialize " + \
+        datetime.datetime.now(pytz.utc).isoformat())
 
   def get(self):
     print("** MainHandler get")
@@ -27,7 +30,8 @@ class MainHandler(tornado.web.RequestHandler):
 
 class GeocsvTornadoHandler(tornado.web.RequestHandler):
   def initialize(self):
-    print("***** GeocsvTornadoHandler initialize")
+    print("***** GeocsvTornadoHandler initialize " + \
+        datetime.datetime.now(pytz.utc).isoformat())
     self.GeocsvValidator = validator.GeocsvValidator.GeocsvValidator(self)
 
   def get(self):
@@ -73,11 +77,12 @@ class GeocsvTornadoHandler(tornado.web.RequestHandler):
 
 class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
   def initialize(self):
-    print("***** GeocsvTornadoFormsHandler initialize")
+    print("***** GeocsvTornadoFormsHandler initialize " + \
+        datetime.datetime.now(pytz.utc).isoformat())
     self.GeocsvValidator = validator.GeocsvValidator.GeocsvValidator(self)
 
   def get(self):
-    print("***** GeocsvTornadoFormsHandler get HTML page *****",)
+    print("***** GeocsvTornadoFormsHandler get for forms page",)
 
     params_part = \
 '''
@@ -170,12 +175,13 @@ class GeocsvTornadoFormsHandler(tornado.web.RequestHandler):
 
 class GeocsvTornadoVersionHandler(tornado.web.RequestHandler):
   def initialize(self):
-    print("***** GeocsvTornadoVersionHandler initialize")
+    print("***** GeocsvTornadoVersionHandler initialize " + \
+        datetime.datetime.now(pytz.utc).isoformat())
 
   def get(self):
     print("***** default current_user: ", self.get_current_user())
 
-    print("***** doing GeocsvTornadoVersionHandler version  *****",)
+    print("***** doing GeocsvTornadoVersionHandler version handler",)
     self.set_header('Access-Control-Allow-Origin', '*')
     self.set_header('Content-Type', 'text/plain; charset=UTF-8')
     self.write("%%%%%% GeocsvValidator version: beta 0.9")
@@ -183,7 +189,8 @@ class GeocsvTornadoVersionHandler(tornado.web.RequestHandler):
 
 class DefaultGeocsvTornadoHandler(tornado.web.RequestHandler):
   def initialize(self):
-    print("***** DefaultGeocsvTornadoHandler initialize")
+    print("***** DefaultGeocsvTornadoHandler initialize " + \
+        datetime.datetime.now(pytz.utc).isoformat())
 
   def get(self):
     print("***** default current_user: ", self.get_current_user())
