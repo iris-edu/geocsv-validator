@@ -43,12 +43,19 @@ GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
     'standard_name_cv', 'title', 'history', 'institution', 'source',
     'comment', 'references'}.union(GEOCSV_COLUMN_VALUED_KEYWORDS)
 
+GEOCSV_RUNAWAY_LIMIT = 1000000000
+
 class GeocsvValidator(object):
 
   # stdwriter - an object with a write method, expecting, expecting
   #             something like sys.stdout or tornado.web.RequestHandler
   def __init__(self, stdwriter):
     self.stdwriter = stdwriter
+
+    if sys.version_info[0] < 3:
+      self.force_to_ASCII_v_any = self.force_to_ASCII_py_v2
+    else:
+      self.force_to_ASCII_v_any = self.force_to_ASCII_py_v3
 
   def get_resrc_iterator(self, pctl):
     result_for_get =  {'data_iter': None, 'except_report': None}
@@ -123,11 +130,21 @@ class GeocsvValidator(object):
         str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
+  def get_a_line(self, data_iter, metrcs, pctl):
+    rowStr = next(data_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
+    metrcs['totalLineCnt'] += 1
+    # this is aproximately the byte count, there may be more than one
+    # line break character, but more importantly, this allow for counting
+    # potentially runaway input with non data, only line breaks
+    metrcs['linep1ByteCnt'] += len(rowStr) + 1
+    if metrcs['linep1ByteCnt'] > GEOCSV_RUNAWAY_LIMIT:
+      raise StopIteration
+    rowStr = self.force_to_ASCII(rowStr, metrcs, pctl)
+    return rowStr
+
   def read_geocsv_lines(self, data_iter, gecsv, metrcs, pctl):
     try:
-      rowStr = next(data_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
-      metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
-      rowStr = self.force_to_ASCII(rowStr, metrcs, pctl)
+      rowStr = self.get_a_line(data_iter, metrcs, pctl)
 
       if len(rowStr) <= 0:
         # ignore zero length line
@@ -170,7 +187,9 @@ class GeocsvValidator(object):
 
         # keep reading as long as octothorp found
         rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
-      # if no octothorp, return out of the recursion and process rowStr
+      else:
+        # if no octothorp, return out of the recursion and process rowStr
+        pass
     except StopIteration:
       raise StopIteration
 
@@ -185,17 +204,18 @@ class GeocsvValidator(object):
     rowASCII = rowStr.encode('ascii', 'replace').decode('ascii')
     return rowASCII
 
-  # detect unicode and force to ASCII
+  def force_to_ASCII_py_v2(self, rowStr, metrcs, pctl):
+    return rowStr.decode('utf-8')
+
+  def force_to_ASCII_py_v3(self, rowStr, metrcs, pctl):
+    str(rowStr.encode('ascii'))
+    return rowStr
+
+  # python 2 csv.reader does not handle unicode values,
+  # so force input data to ASCII
   def force_to_ASCII(self, rowStr, metrcs, pctl):
     try:
-      if sys.version_info[0] < 3:
-        rowASCII = rowStr.decode('utf-8')
-      else:
-        try:
-          str(rowStr.encode('ascii'))
-          rowASCII = rowStr
-        except UnicodeEncodeError:
-          rowASCII = self.handle_unicode(rowStr, metrcs, pctl)
+      rowASCII = self.force_to_ASCII_v_any(rowStr, metrcs, pctl)
     except UnicodeEncodeError:
       rowASCII = self.handle_unicode(rowStr, metrcs, pctl)
 
@@ -203,10 +223,8 @@ class GeocsvValidator(object):
 
   def handle_csv_row(self, rowStr, delimiter, metrcs, pctl):
     # csv module interface is not setup to stream one line at a time,
-    # so make a list of 1 row
-    # also, python 2 csv does not handle unicode values, so force to ASCII
-    rowASCII = self.force_to_ASCII(rowStr, metrcs, pctl)
-    rowiter = iter(list([rowASCII]))
+    # so make a list of 1 using the incoming row and convert to an iterator
+    rowiter = iter(list([rowStr]))
     csvreadr = csv.reader(rowiter, delimiter = delimiter)
     for row in csvreadr:
       metrcs['dataLineCnt'] = metrcs['dataLineCnt'] + 1
@@ -243,6 +261,7 @@ class GeocsvValidator(object):
     # gecsv - content related to geocsv header information
     metrcs = collections.OrderedDict()
     metrcs['totalLineCnt'] = 0
+    metrcs['linep1ByteCnt'] = 0
     metrcs['dataLineCnt'] = 0
     metrcs['zeroLenCnt'] = 0
     metrcs['ignoreLineCnt'] = 0
@@ -304,8 +323,7 @@ class GeocsvValidator(object):
     looping = True
     while looping:
       try:
-        rowStr = next(data_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
-        metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
+        rowStr = self.get_a_line(data_iter, metrcs, pctl)
 
         if len(rowStr) <= 0:
           # ignore zero length line
@@ -331,13 +349,15 @@ class GeocsvValidator(object):
               self.report_octothorp(pctl, metrcs, rowStr)
             else:
               # a new Geocsv set is found, do report
-              metrcs['totalLineCnt'] = metrcs['totalLineCnt'] - 1
+              metrcs['totalLineCnt'] -= 1
+              metrcs['linep1ByteCnt'] -= (len(rowStr) + 1)
               report = self.check_geocsv_fields(metrcs, gecsv)
               self.writeReport(pctl, report)
 
               # and reset metrics and geocsv obj and continue validate
               metrcs = self.createMetricsObj()
-              metrcs['totalLineCnt'] = metrcs['totalLineCnt'] + 1
+              metrcs['totalLineCnt'] += 1
+              metrcs['linep1ByteCnt'] += len(rowStr) + 1
               gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
 
               self.processGeocsvHeader(data_iter, gecsv, metrcs, pctl)
@@ -459,6 +479,13 @@ class GeocsvValidator(object):
       report['GeoCSV_validated'] = False
       report['WARNING_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
+
+    # check for null data field values
+    if metrcs['linep1ByteCnt'] > GEOCSV_RUNAWAY_LIMIT:
+      report['GeoCSV_validated'] = False
+      report['WARNING_runaway_byte_limit_exceded'] = 'The byte count of ' + \
+          'incoming data on each line plus 1 byte counted for each line, ' + \
+          'exceded: ' + str(GEOCSV_RUNAWAY_LIMIT)
 
     # if any errors or warning are related to the field parameters in the
     # geocsv header, show the specific parameters for this file
