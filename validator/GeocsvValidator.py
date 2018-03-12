@@ -50,12 +50,16 @@ class GeocsvValidator(object):
   # stdwriter - an object with a write method, expecting, expecting
   #             something like sys.stdout or tornado.web.RequestHandler
   def __init__(self, stdwriter):
+    self.current_version = 0.92
     self.stdwriter = stdwriter
 
     if sys.version_info[0] < 3:
       self.force_to_ASCII_v_any = self.force_to_ASCII_py_v2
     else:
       self.force_to_ASCII_v_any = self.force_to_ASCII_py_v3
+
+  def version(self):
+    self.stdwriter.write(str(self.current_version))
 
   def get_resrc_iterator(self, pctl):
     result_for_get =  {'data_iter': None, 'except_report': None}
@@ -401,6 +405,9 @@ class GeocsvValidator(object):
       rstr = self.createReportStr(report)
       self.stdwriter.write(rstr)
 
+  # doReport writes to stdout or designated web object, depending
+  # object used to initialize validator,
+  # or no output written pctl['write_report'] is false (intended for unit tests)
   def doReport(self, pctl):
     if pctl['input_resrc']:
       result_for_get = self.get_resrc_iterator(pctl)
@@ -558,10 +565,14 @@ def parse_cmd_lines():
 
 if __name__ == "__main__" \
     or __name__ == "GeocsvValidate" \
-    or __name__ == "src.python.main.GeocsvValidate":
+    or __name__ == "validator.GeocsvValidate":
 
-  pctl = parse_cmd_lines()
-
-  validateObj = GeocsvValidator(sys.stdout)
-  validateObj.doReport(pctl)
+  if '--version' in sys.argv:
+    # skip parsing if version is in command line list
+    validateObj = GeocsvValidator(sys.stdout)
+    validateObj.version()
+  else:
+    pctl = parse_cmd_lines()
+    validateObj = GeocsvValidator(sys.stdout)
+    validateObj.doReport(pctl)
 
