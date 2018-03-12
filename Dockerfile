@@ -1,4 +1,4 @@
-# Setup a python environment to run geocsv-validator
+# Setup a python environment to run geocsv_validator
 
 # 2018-01-31
 # original from https://hub.docker.com/r/frolvlad/alpine-python3/~/dockerfile/
@@ -15,20 +15,20 @@ RUN apk add --no-cache python3 && \
 
 RUN pip install pytz && pip install future && pip install tornado
 
-ADD validator/  /geocsv_vali/validator/
-ADD service/ /geocsv_vali/service/
+ADD validator/  /geocsv_validator/validator/
+ADD service/ /geocsv_validator/service/
 
 # run python unbuffered so as to see output in docker logs ...
-CMD ["python", "-u", "/geocsv_vali/service/geocsvTornadoService.py"]
+CMD ["python", "-u", "/geocsv_validator/service/geocsvTornadoService.py"]
 
-# docker build --tag geocsv_vali:v1 .
+# docker build --tag geocsv_validator:v1 .
 
 # to run in defalt mode, expose default tornado port 8989 as externl 8989
-# docker run -ti -p 8989:8989 --name geocsv_vali geocsv_vali:v1
+# docker run -ti -p 8989:8989 --name geocsv_validator geocsv_validator:v1
 #
 # to manage port and document URL
 # expose (to external) port 8989 from configured (in tornado) port 8950
-# docker run -ti -p 8989:8950 --env GEOCSV_LISTENING_PORT='8950' --env GEOCSV_DOCUMENT_URL='http://cube1:8988' --name geocsv_vali geocsv_vali:v1
+# docker run -ti -p 8989:8950 --env GEOCSV_LISTENING_PORT='8950' --env GEOCSV_DOCUMENT_URL='http://cube1:8988' --name geocsv_validator geocsv_validator:v1
 # or as daemon
 # docker run -d ...
 # 
@@ -39,5 +39,5 @@ CMD ["python", "-u", "/geocsv_vali/service/geocsvTornadoService.py"]
 # curl -v localhost:8950/geows/geocsv/1/
 #
 # to move an image, make a tar file, copy, and load it on target server
-# docker save --output geocsv_vali_v1.tar geocsv_vali:v1
-# docker load < geocsv_vali_v1.tar
+# docker save --output geocsv_validator_v1.tar geocsv_validator:v1
+# docker load < geocsv_validator_v1.tar
