@@ -483,9 +483,15 @@ class GeocsvValidator(object):
 
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
-      report['GeoCSV_validated'] = False
-      report['WARNING_data_field_null'] = 'At least one data field ' + \
+      ## don't set INFO fields-->report['GeoCSV_validated'] = False
+      report['INFO_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
+
+    # check for unicode in field values
+    if metrcs['unicodeLineCnt'] > 0:
+      ## don't set INFO fields-->report['GeoCSV_validated'] = True
+      report['INFO_unicode_in_field'] = 'At least one line has a data field ' + \
+          'with a UNICODE character, count: ' + str(metrcs['unicodeLineCnt'])
 
     # check for null data field values
     if metrcs['linep1ByteCnt'] > GEOCSV_RUNAWAY_LIMIT:
