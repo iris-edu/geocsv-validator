@@ -1,0 +1,21 @@
+#dataset:GeoCSV 2.0
+#names: iso_time,ship_longitude,ship_latitude,raw_magnetics,magnetic_anomaly,igrf,device_longitude,device_latitude,dp_flag
+#field_type: datetime,float,float,float,float,float,float,integer
+#attribution: http://www.rvdata.us/about/products
+#delimiter: ,
+#source: http://www.rvdata.us/
+#title: Processed Magnetics Data from Research CruiseMGL1307
+#cruise_id: MGL1307
+#device_information: magnetometer (make: Geometrics model: G-882)
+#creation_date: 2015-01-18T19:38:55+00:00
+#input_data: doi:10.7284/111029
+#names_NVSP02: DTUT8601,ALONGP01,ALATGP01,MAGNFLDX,MMANZZ01
+2013-06-07T07:35:10.0997Z,-12.5669084,42.0360754,44984.68,-118.501,45103.28,-12.5657654,0
+2013-06-07T07:36:10.1073Z,-12.5684555,42.0360966,44981.17,-122.736,45103.274,-12.5672536,0
+2013-06-07T07:37:10.1950Z,-12.5699536,42.0361235,44982.41,-120.76,45103.271,-12.568746,0
+2013-06-07T07:36:10.1073Z,-12,42.0360966,44981.17,-122.736,45103.274,-12.5672536,0
+2013-14-07T07:36:10.1073Z,-12.5684555,42.0360966,44981.17,-122.736,45103.274,-12.5672536,0
+2013-06-07T07:36:10.1073Z,-12.5684555,42.0360966,44981.17,-122.736,45103.274,-12.5672536,50
+2013-06-07T07:36:10.1073Z,-12.5684555,42.0360966,44981.17,-122.736,45.103274,-12.5672536,0
+
+

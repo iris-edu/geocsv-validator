@@ -24,6 +24,7 @@ import pytz
 import argparse
 import collections
 import io
+import dateutil.parser
 
 MY_LINE_BREAK_CHARS = '\n\r'
 
@@ -36,12 +37,17 @@ KEYWORD_REGEX = '^# *(.+?):'
 GEOCSV_REQUIRED_START_REGEX = '^# *dataset *: *GeoCSV 2.0'
 GEOCSV_REQUIRED_START_LITERAL = '# dataset: GeoCSV 2.0'
 
+GEOCSV_FIELD_TYPE = 'field_type'
+
 GEOCSV_COLUMN_VALUED_KEYWORDS = {'field_unit', 'field_type',
    'field_long_name', 'field_standard_name', 'field_missing'}
 
 GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
     'standard_name_cv', 'title', 'history', 'institution', 'source',
     'comment', 'references'}.union(GEOCSV_COLUMN_VALUED_KEYWORDS)
+
+GEOCSV_WELL_KNOWN_FIELD_TYPE = {'string', 'integer', 'float',
+    'datetime'}
 
 GEOCSV_RUNAWAY_LIMIT = 1000000000
 
@@ -50,7 +56,7 @@ class GeocsvValidator(object):
   # stdwriter - an object with a write method, expecting, expecting
   #             something like sys.stdout or tornado.web.RequestHandler
   def __init__(self, stdwriter):
-    self.current_version = 0.92
+    self.current_version = 0.93
     self.stdwriter = stdwriter
 
     if sys.version_info[0] < 3:
@@ -58,8 +64,34 @@ class GeocsvValidator(object):
     else:
       self.force_to_ASCII_v_any = self.force_to_ASCII_py_v3
 
+    self.field_type_test_functions = []
+
   def version(self):
     self.stdwriter.write(str(self.current_version))
+
+  def try_field_type_noop(self, testStr):
+    return 0
+
+  def try_field_type_float(self, testStr):
+    try:
+      float(testStr)
+    except:
+      return 1
+    return 0
+
+  def try_field_type_int(self, testStr):
+    try:
+      int(testStr)
+    except:
+      return 1
+    return 0
+
+  def try_field_type_datetime_utc(self, testStr):
+    try:
+      dtutc = dateutil.parser.parse(testStr).astimezone(pytz.utc)
+    except:
+      return 1
+    return 0
 
   def get_resrc_iterator(self, pctl):
     result_for_get =  {'data_iter': None, 'except_report': None}
@@ -164,7 +196,7 @@ class GeocsvValidator(object):
         # do geocsv processing
         mObj = re.match(KEYWORD_REGEX, rowStr)
         if mObj == None:
-          # no geocsv keyword form, count and ignore
+          # no start of geocsv yet, treat as comment line, count and ignore
           metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
           self.report_octothorp(pctl, metrcs, rowStr)
         else:
@@ -192,8 +224,28 @@ class GeocsvValidator(object):
         # keep reading as long as octothorp found
         rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
       else:
-        # if no octothorp, return out of the recursion and process rowStr
-        pass
+        # when no more octothorp, finish here and
+        # return out of the recursion and process rowStr
+        #
+        # set up field_type_test_functions if available
+        self.field_type_test_functions = []
+        if GEOCSV_FIELD_TYPE in gecsv:
+          # read csv string using csv.reader as else where in this program
+          field_type_list = []
+          rowiter = iter(list([gecsv[GEOCSV_FIELD_TYPE]]))
+          csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
+          for row in csvreadr:
+            field_type_list = row
+
+          for ft in field_type_list:
+            if ft == 'float':
+              self.field_type_test_functions.append(self.try_field_type_float)
+            elif ft == 'integer':
+              self.field_type_test_functions.append(self.try_field_type_int)
+            elif ft == 'datetime':
+              self.field_type_test_functions.append(self.try_field_type_datetime_utc)
+            else:
+              self.field_type_test_functions.append(self.try_field_type_noop)
     except StopIteration:
       raise StopIteration
 
@@ -237,14 +289,28 @@ class GeocsvValidator(object):
           " line:" + str(row))
 
       anyNulls = False
+      anyTypeErrs = False
+      itmIdx = 0
       for itm in row:
         # a length of zero for a cell item is used as the definition of null
         # csv.reader evedently converts input fields to strings
         if len(itm) <= 0:
           metrcs['nullFieldCnt'] = metrcs['nullFieldCnt'] + 1
           anyNulls = True
+
+        if itmIdx < len(self.field_type_test_functions):
+          if self.field_type_test_functions[itmIdx](itm) > 0:
+            metrcs['unexpectedFieldTypeCnt'] += 1
+            anyTypeErrs = True
+
+        itmIdx += 1
+
       if anyNulls and pctl['null_fields']:
         self.stdwriter.write("--null_fields-- " + str(list(metrcs.values())) + \
+            "  line: " + str(rowStr.rstrip()) + "\n")
+
+      if anyTypeErrs and pctl['field_type']:
+        self.stdwriter.write("--unexpected_field_type-- " + str(list(metrcs.values())) + \
             "  line: " + str(rowStr.rstrip()) + "\n")
 
       if len(row) <= 0:
@@ -272,6 +338,7 @@ class GeocsvValidator(object):
     metrcs['geocsvHdrLineCnt'] = 0
     metrcs['dataFieldsCntSet'] = set()
     metrcs['nullFieldCnt'] = 0
+    metrcs['unexpectedFieldTypeCnt'] = 0
     metrcs['unicodeLineCnt'] = 0
 
     return metrcs
@@ -314,7 +381,7 @@ class GeocsvValidator(object):
     metrcs = self.createMetricsObj()
 
     self.report_any(pctl, "\n" + \
-      "------- GeoCSV_Validate - starting validate  datetime111: " + \
+      "------- GeoCSV_Validate - starting validate  datetime: " + \
       str(datetime.datetime.now(pytz.utc).isoformat()))
 
     gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
@@ -384,7 +451,7 @@ class GeocsvValidator(object):
     rstr = "-- GeoCSV_Validate_Report  datetime: " + \
         str(datetime.datetime.now(pytz.utc).isoformat()) + "\n"
     for itm in report:
-      if isinstance(report[itm], dict) and itm == 'geocsv_fields':
+      if isinstance(report[itm], dict) and itm == 'ERROR_between_these_geocsv_fields':
         rstr += "-- " + str(itm) + ": " + "\n"
         if len(report[itm]) > 0:
           for it2 in report[itm]:
@@ -440,7 +507,7 @@ class GeocsvValidator(object):
           ' expecting this line: ' + str(GEOCSV_REQUIRED_START_LITERAL)
 
     # check for consistent geocsv field parameter values
-    thisFldDict = {}
+    thisFldDict = collections.OrderedDict()
     showGeoCSVFldsDict = False
     gecsvFieldCntSet = set()
     fldSet = GEOCSV_COLUMN_VALUED_KEYWORDS.intersection(set(gecsv.keys()))
@@ -483,13 +550,20 @@ class GeocsvValidator(object):
 
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
-      ## don't set INFO fields-->report['GeoCSV_validated'] = False
+      ##report['GeoCSV_validated'] = False
       report['INFO_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
 
+    # check for unexpected field data type
+    if metrcs['unexpectedFieldTypeCnt'] > 0:
+      ##report['GeoCSV_validated'] = False
+      report['INFO_unexpected_field_type'] = 'At least one data field ' + \
+          'did not convert to the type specified in ' + GEOCSV_FIELD_TYPE + \
+          ' count: ' + str(metrcs['unexpectedFieldTypeCnt'])
+
     # check for unicode in field values
     if metrcs['unicodeLineCnt'] > 0:
-      ## don't set INFO fields-->report['GeoCSV_validated'] = True
+      ##report['GeoCSV_validated'] = False
       report['INFO_unicode_in_field'] = 'At least one line has a data field ' + \
           'with a UNICODE character, count: ' + str(metrcs['unicodeLineCnt'])
 
@@ -503,7 +577,7 @@ class GeocsvValidator(object):
     # if any errors or warning are related to the field parameters in the
     # geocsv header, show the specific parameters for this file
     if showGeoCSVFldsDict:
-      report['geocsv_fields'] = thisFldDict
+      report['ERROR_between_these_geocsv_fields'] = thisFldDict
 
     return report
 
@@ -529,6 +603,7 @@ def default_program_control():
   pctl['octothorp'] = False  # show lines with # and respective metrics
   pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
   pctl['null_fields'] = False  # show lines if any field is null and respective metrics
+  pctl['field_type'] = False # when GeoCSV field_type header line is present, check respective fields for integer, float, datetime
   pctl['write_report'] = True  # report is not written when False (i.e. keeps unit test report small)
 
   return pctl
@@ -537,25 +612,30 @@ def parse_cmd_lines():
   pctl = default_program_control()
 
   parser = argparse.ArgumentParser(description=\
-      'Read a GeoCSV file and check for conformance against the recommended ' + \
-      'standard, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
+      'Read a GeoCSV file and check for conformance against the GeoCSV ' + \
+      'standard description, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
 
   parser.add_argument("--input_resrc", help='Input a URL or filename', \
       type=str, required=True, default='nameRequired')
   parser.add_argument('--verbose', \
-      help='Show metrics for every data line', type=str2bool, default=False)
+      help='When true, show metrics for every data line', type=str2bool, default=False)
   parser.add_argument('--octothorp', \
-      help='Show metrics for lines with # after initial start of data lines', \
+      help='When true, show metrics for lines with # after initial start of data lines', \
       type=str2bool, default=False)
   parser.add_argument('--unicode', \
-      help='Show metrics for lines with unicode', \
+      help='When true, show metrics for lines with unicode', \
       type=str2bool, default=False)
   parser.add_argument('--null_fields', \
-      help='Show metrics for lines if any field is null', \
+      help='When true, show metrics for lines if any field is null', \
+      type=str2bool, default=False)
+  parser.add_argument('--field_type', \
+      help='When true, show metrics for lines if any field does not match its ' + \
+      'respective field_type, i.e. integer, float, or datetime', \
       type=str2bool, default=False)
   parser.add_argument('--write_report', \
-      help='Do not write report lines when false, this may be used to make ' + \
-      'a succinct unit test report)', type=str2bool, default=True)
+      help='Do not write report lines when false, this is used to make ' + \
+      'succinct unit test reports, but may be useful in a pipline workflow)', \
+      type=str2bool, default=True)
 
   args = parser.parse_args()
 
@@ -565,6 +645,7 @@ def parse_cmd_lines():
   pctl['octothorp'] = args.octothorp
   pctl['unicode'] = args.unicode
   pctl['null_fields'] = args.null_fields
+  pctl['field_type'] = args.field_type
   pctl['write_report'] = args.write_report
 
   return pctl

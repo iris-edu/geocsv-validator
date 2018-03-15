@@ -13,7 +13,7 @@ RUN apk add --no-cache python3 && \
     if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi && \
     rm -r /root/.cache
 
-RUN pip install pytz && pip install future && pip install tornado
+RUN pip install pytz && pip install python-dateutil && pip install future && pip install tornado
 
 ADD validator/  /geocsv_validator/validator/
 ADD service/ /geocsv_validator/service/

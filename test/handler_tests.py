@@ -39,6 +39,7 @@ class GeoCSVTests(unittest.TestCase):
     pctl['octothorp'] = False  # explicitly list any line with # and respective metrics
     pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
     pctl['null_fields'] = False  # show lines if any field is null and respective metrics
+    pctl['field_type'] = False # show lines if any field does not match its respective field_type, i.e. integer, float, or datetime
     pctl['write_report'] = False  # report is not written when false (i.e. keeps unit test report small)
 
     if pctl['write_report']:
@@ -156,6 +157,10 @@ IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1995-07-14T00:00:0
     # setting expected_outcome to expected value for last file set only,
     # at this time, there is no concept of pass/fail for multiple sets
     self.do_geocsv_run(True, None, multiple_sets)
+  def test18(self):
+    self.do_geocsv_run(False, self.rsrc_URL_path + 'R2R_sample2.geocsv', None)
+  def test19(self):
+    self.do_geocsv_run(True, self.rsrc_URL_path + 'R2R_sample3.geocsv', None)
 
 def run_test_suites(argv_list):
   global g_argv_list
@@ -187,6 +192,8 @@ def run_test_suites(argv_list):
   suite.addTest(GeoCSVTests("test15"))
   suite.addTest(GeoCSVTests("test16"))
   suite.addTest(GeoCSVTests("test17"))
+  suite.addTest(GeoCSVTests("test18"))
+  suite.addTest(GeoCSVTests("test19"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)
