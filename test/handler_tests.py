@@ -137,10 +137,13 @@ IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1995-07-14T00:00:0
   def test13(self):
     self.do_geocsv_run(False, self.rsrc_URL_path + 'UNAVCO_sample3.geocsv', None)
   def test14(self):
-    self.do_geocsv_run(True, self.rsrc_URL_path + 'IRIS_sample3.geocsv', None)
+    # delimiter keyword missing, would cause be an INFO only, except also when
+    # field_type is prsent, can cause unknown field type error
+    self.do_geocsv_run(False, self.rsrc_URL_path + 'IRIS_sample3.geocsv', None)
   def test15(self):
     self.do_geocsv_run(False, self.rsrc_URL_path + 'IRIS_station1.geocsv', None)
   def test16(self):
+    # ignores poorly formed keyword
     self.do_geocsv_run(True, self.rsrc_URL_path + 'IRIS_sample4.geocsv', None)
   def test17(self):
     # stream multiple files together
@@ -160,9 +163,12 @@ IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1995-07-14T00:00:0
   def test18(self):
     self.do_geocsv_run(False, self.rsrc_URL_path + 'R2R_sample2.geocsv', None)
   def test19(self):
-    self.do_geocsv_run(True, self.rsrc_URL_path + 'R2R_sample3.geocsv', None)
+    # wrong month number in datetime field
+    self.do_geocsv_run(False, self.rsrc_URL_path + 'R2R_sample3.geocsv', None)
   def test20(self):
     self.do_geocsv_run(True, self.rsrc_URL_path + 'IRIS_sample5.geocsv', None)
+  def test21(self):
+    self.do_geocsv_run(False, self.rsrc_URL_path + 'IRIS_sample6.geocsv', None)
 
 def run_test_suites(argv_list):
   global g_argv_list
@@ -197,6 +203,7 @@ def run_test_suites(argv_list):
   suite.addTest(GeoCSVTests("test18"))
   suite.addTest(GeoCSVTests("test19"))
   suite.addTest(GeoCSVTests("test20"))
+  suite.addTest(GeoCSVTests("test21"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)

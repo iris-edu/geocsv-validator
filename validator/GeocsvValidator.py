@@ -88,7 +88,8 @@ class GeocsvValidator(object):
 
   def try_field_type_datetime_utc(self, testStr):
     try:
-      dtutc = dateutil.parser.parse(testStr).astimezone(pytz.utc)
+## for UTC      dtutc = dateutil.parser.parse(testStr).astimezone(pytz.utc)
+      dtutc = dateutil.parser.parse(testStr)
     except:
       return 1
     return 0
@@ -230,7 +231,8 @@ class GeocsvValidator(object):
         # set up field_type_test_functions if available
         self.field_type_test_functions = []
         if GEOCSV_FIELD_TYPE in gecsv:
-          # read csv string using csv.reader as else where in this program
+          # read csv string using csv.reader as else where in this program,
+          # i.e. create a list of one row
           field_type_list = []
           rowiter = iter(list([gecsv[GEOCSV_FIELD_TYPE]]))
           csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
@@ -238,13 +240,19 @@ class GeocsvValidator(object):
             field_type_list = row
 
           for ft in field_type_list:
-            if ft == 'float':
+            fiTyp = ft.strip().lower()
+            if fiTyp == 'float':
               self.field_type_test_functions.append(self.try_field_type_float)
-            elif ft == 'integer':
+            elif fiTyp == 'integer':
               self.field_type_test_functions.append(self.try_field_type_int)
-            elif ft == 'datetime':
+            elif fiTyp == 'datetime':
               self.field_type_test_functions.append(self.try_field_type_datetime_utc)
+            elif fiTyp == 'string':
+              self.field_type_test_functions.append(self.try_field_type_noop)
             else:
+              metrcs['unknownFieldTypeCnt'] += 1
+              self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) + \
+                  " line:" + str(row))
               self.field_type_test_functions.append(self.try_field_type_noop)
     except StopIteration:
       raise StopIteration
@@ -277,7 +285,7 @@ class GeocsvValidator(object):
 
     return rowASCII
 
-  def handle_csv_row(self, rowStr, delimiter, metrcs, pctl):
+  def handle_csv_row(self, rowStr, delimiter, metrcs, pctl, isCSVHeaderLine):
     # csv module interface is not setup to stream one line at a time,
     # so make a list of 1 using the incoming row and convert to an iterator
     rowiter = iter(list([rowStr]))
@@ -285,8 +293,6 @@ class GeocsvValidator(object):
     for row in csvreadr:
       metrcs['dataLineCnt'] = metrcs['dataLineCnt'] + 1
       metrcs['dataFieldsCntSet'].add(len(row))
-      self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) + \
-          " line:" + str(row))
 
       anyNulls = False
       anyTypeErrs = False
@@ -298,12 +304,23 @@ class GeocsvValidator(object):
           metrcs['nullFieldCnt'] = metrcs['nullFieldCnt'] + 1
           anyNulls = True
 
-        if itmIdx < len(self.field_type_test_functions):
-          if self.field_type_test_functions[itmIdx](itm) > 0:
-            metrcs['unexpectedFieldTypeCnt'] += 1
-            anyTypeErrs = True
+        if isCSVHeaderLine:
+          # i.e. not type checking on CSV header line
+          pass
+        else:
+          if itmIdx < len(self.field_type_test_functions):
+            if self.field_type_test_functions[itmIdx](itm) > 0:
+              metrcs['dataTypeErrorCnt'] += 1
+              anyTypeErrs = True
 
         itmIdx += 1
+
+      # Note: this line should be located after any metric count update for any
+      #       row so that when looking at verbose listing, the occurrence of a
+      #       counter change is on the same line it occurred, not one before
+      #       or one after
+      self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) + \
+          " line:" + str(row))
 
       if anyNulls and pctl['null_fields']:
         self.stdwriter.write("--null_fields-- " + str(list(metrcs.values())) + \
@@ -338,8 +355,9 @@ class GeocsvValidator(object):
     metrcs['geocsvHdrLineCnt'] = 0
     metrcs['dataFieldsCntSet'] = set()
     metrcs['nullFieldCnt'] = 0
-    metrcs['unexpectedFieldTypeCnt'] = 0
+    metrcs['dataTypeErrorCnt'] = 0
     metrcs['unicodeLineCnt'] = 0
+    metrcs['unknownFieldTypeCnt'] = 0
 
     return metrcs
 
@@ -367,7 +385,8 @@ class GeocsvValidator(object):
           str(list(metrcs.values())))
 
     # handle first non-geocsv line after finished reading geocsv header lines
-    self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl)
+    # This should be the one and only CSV header line
+    self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl, True)
 
   def report_any(self, pctl, str1):
     if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
@@ -435,7 +454,7 @@ class GeocsvValidator(object):
             continue
         else:
           # handle non-octothorp lines
-          self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl)
+          self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl, False)
       except StopIteration:
         self.report_any(pctl, "------- GeoCSV_Validate - finished validate, datetime: " + \
             str(datetime.datetime.now(pytz.utc).isoformat()))
@@ -503,7 +522,7 @@ class GeocsvValidator(object):
     # check for start
     if (not gecsv['geocsv_start_found']):
       report['GeoCSV_validated'] = False
-      report['WARNING_no_geocsv_start'] = 'WARNING, start of GeoCSV not found,' + \
+      report['WARNING_no_geocsv_start'] = 'ERROR, start of GeoCSV not found,' + \
           ' expecting this line: ' + str(GEOCSV_REQUIRED_START_LITERAL)
 
     # check for consistent geocsv field parameter values
@@ -555,12 +574,18 @@ class GeocsvValidator(object):
       report['INFO_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
 
+    if metrcs['unknownFieldTypeCnt'] > 0:
+      report['GeoCSV_validated'] = False
+      report['ERROR_unknown_field_type'] = 'There are one or more unknown field types ' + \
+          'in the field_type keyword, count: ' + str(metrcs['unknownFieldTypeCnt']) + \
+          '  field_type: ' + gecsv['field_type']
+
     # check for unexpected field data type
-    if metrcs['unexpectedFieldTypeCnt'] > 0:
-      ##report['GeoCSV_validated'] = False
-      report['INFO_unexpected_field_type'] = 'At least one data field ' + \
-          'did not convert to the type specified in ' + GEOCSV_FIELD_TYPE + \
-          ' count: ' + str(metrcs['unexpectedFieldTypeCnt'])
+    if metrcs['dataTypeErrorCnt'] > 0:
+      report['GeoCSV_validated'] = False
+      report['ERROR_in_data_type'] = 'At least one data value ' + \
+          'did not convert to the type specified in keyword: ' + GEOCSV_FIELD_TYPE + \
+          ',  count: ' + str(metrcs['dataTypeErrorCnt'])
 
     # check for unicode in field values
     if metrcs['unicodeLineCnt'] > 0:

@@ -1,4 +1,5 @@
 # dataset: GeoCSV 2.0
+# delimiter: |
 # : ASCII | ASCII | degrees_north | degrees_east | meters| ASCII| UTC| UTC 
 # field_type: string | string | float | float | float | string | datetime | datetime 
 Network|Station|Latitude|Longitude|Elevation|SiteName|StartTime|EndTime 
