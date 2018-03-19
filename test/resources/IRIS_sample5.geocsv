@@ -1,0 +1,23 @@
+# dataset: GeoCSV 2.0
+# delimeter: ,
+# TSID: IU_COLA_00_BHZ_M
+# sample_count: 144000
+# sample_rate_hz: 40
+# start_time: 2018-01-01T00:00:00.019500Z
+# latitude_deg: 64.873596
+# longitude_deg: -147.861603
+# elevation_m: 84.0
+# depth_m: 116.0
+# azimuth_deg: 0.0
+# dip_deg: -90.0
+# instrument: Trillium 360
+# scale_factor: 1.82536E9
+# scale_frequency_hz: 0.02
+# scale_units: M/S
+# field_unit: Counts
+# field_type: INTEGER
+Sample
+274
+248
+249
+232

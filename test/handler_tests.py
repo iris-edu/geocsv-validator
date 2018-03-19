@@ -137,11 +137,11 @@ IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1995-07-14T00:00:0
   def test13(self):
     self.do_geocsv_run(False, self.rsrc_URL_path + 'UNAVCO_sample3.geocsv', None)
   def test14(self):
-    self.do_geocsv_run(False, self.rsrc_URL_path + 'IRIS_sample3.geocsv', None)
+    self.do_geocsv_run(True, self.rsrc_URL_path + 'IRIS_sample3.geocsv', None)
   def test15(self):
     self.do_geocsv_run(False, self.rsrc_URL_path + 'IRIS_station1.geocsv', None)
   def test16(self):
-    self.do_geocsv_run(False, self.rsrc_URL_path + 'IRIS_sample4.geocsv', None)
+    self.do_geocsv_run(True, self.rsrc_URL_path + 'IRIS_sample4.geocsv', None)
   def test17(self):
     # stream multiple files together
     multiple_sets = b''
@@ -161,6 +161,8 @@ IU|ANMO|34.9459|-106.4572|1850.0|Albuquerque, New Mexico, USA|1995-07-14T00:00:0
     self.do_geocsv_run(False, self.rsrc_URL_path + 'R2R_sample2.geocsv', None)
   def test19(self):
     self.do_geocsv_run(True, self.rsrc_URL_path + 'R2R_sample3.geocsv', None)
+  def test20(self):
+    self.do_geocsv_run(True, self.rsrc_URL_path + 'IRIS_sample5.geocsv', None)
 
 def run_test_suites(argv_list):
   global g_argv_list
@@ -194,6 +196,7 @@ def run_test_suites(argv_list):
   suite.addTest(GeoCSVTests("test17"))
   suite.addTest(GeoCSVTests("test18"))
   suite.addTest(GeoCSVTests("test19"))
+  suite.addTest(GeoCSVTests("test20"))
 
   runner = unittest.TextTestRunner()
   runner.run(suite)

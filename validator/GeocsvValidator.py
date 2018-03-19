@@ -539,14 +539,15 @@ class GeocsvValidator(object):
           '  geocsv field sizes: ' + str(gecsvFieldCntSet)
       showGeoCSVFldsDict = True
 
-    # check for field size of one, implying missing or wrong delimiter
-    if 1 in metrcs['dataFieldsCntSet'] or 1 in gecsvFieldCntSet:
-      report['GeoCSV_validated'] = False
-      report['WARNING_field_size_1'] = 'There is a geocsv field or data ' + \
-          'row of size one, this may be a delimiter problem, data row sizes: ' + \
-          str(metrcs['dataFieldsCntSet']) + '  geocsv field sizes: ' + \
-          str(gecsvFieldCntSet)
-      showGeoCSVFldsDict = True
+    # check for field size of one, which may imply a missing delimiter keyword
+    # Note: this check must follow the ERROR_ geocsv_to_data_field_size check
+    if report['GeoCSV_validated']:
+      # only check if data field and keyword fields are consistent
+      if 1 in metrcs['dataFieldsCntSet'] and len(metrcs['dataFieldsCntSet']) == 1 \
+          and 1 in gecsvFieldCntSet and len(gecsvFieldCntSet) == 1:
+        ##report['GeoCSV_validated'] = False
+        report['INFO_all_fields_sizes_are_1'] = 'This may be correct, or the delimiter ' + \
+            'keyword may be missing.'
 
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
