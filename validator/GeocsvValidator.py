@@ -49,7 +49,9 @@ GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
 GEOCSV_WELL_KNOWN_FIELD_TYPE = {'string', 'integer', 'float',
     'datetime'}
 
-GEOCSV_RUNAWAY_LIMIT = 1000000000
+# set limit to 4 times channel query size, and a little more
+# e.g. 96867459 * 4 = 387469836 ~ 400 MB
+GEOCSV_RUNAWAY_LIMIT =  1024 * 1024 * 400
 
 class GeocsvValidator(object):
 
@@ -73,6 +75,10 @@ class GeocsvValidator(object):
     return 0
 
   def try_field_type_float(self, testStr):
+    # consider null ok
+    if len(testStr) <= 0:
+      return 0
+
     try:
       float(testStr)
     except:
@@ -80,6 +86,10 @@ class GeocsvValidator(object):
     return 0
 
   def try_field_type_int(self, testStr):
+    # consider null ok
+    if len(testStr) <= 0:
+      return 0
+
     try:
       int(testStr)
     except:
@@ -87,6 +97,10 @@ class GeocsvValidator(object):
     return 0
 
   def try_field_type_datetime_utc(self, testStr):
+    # consider null ok
+    if len(testStr) <= 0:
+      return 0
+
     try:
 ## for UTC      dtutc = dateutil.parser.parse(testStr).astimezone(pytz.utc)
       dtutc = dateutil.parser.parse(testStr)
@@ -467,8 +481,10 @@ class GeocsvValidator(object):
     return report
 
   def createReportStr(self, report):
+    processing_seconds =  datetime.datetime.now(pytz.utc) - self.processingStartTime
     rstr = "-- GeoCSV_Validate_Report  datetime: " + \
-        str(datetime.datetime.now(pytz.utc).isoformat()) + "\n"
+        str(datetime.datetime.now(pytz.utc).isoformat()) + \
+        "  processing_seconds: " + str(processing_seconds.total_seconds()) + "\n"
     for itm in report:
       if isinstance(report[itm], dict) and itm == 'ERROR_between_these_geocsv_fields':
         rstr += "-- " + str(itm) + ": " + "\n"
@@ -495,6 +511,8 @@ class GeocsvValidator(object):
   # object used to initialize validator,
   # or no output written pctl['write_report'] is false (intended for unit tests)
   def doReport(self, pctl):
+    self.processingStartTime = datetime.datetime.now(pytz.utc)
+
     if pctl['input_resrc']:
       result_for_get = self.get_resrc_iterator(pctl)
     else:
