@@ -108,6 +108,38 @@ class GeocsvValidator(object):
       return 1
     return 0
 
+  def get_no_input_specified(self, pctl):
+    result_for_get =  {'data_iter': None, 'except_report': None}
+
+    metrcs = self.createMetricsObj()
+    gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
+    report = self.check_geocsv_fields(metrcs, gecsv)
+    report['ERROR_no_input_specified'] = \
+      'No data input option was selected'
+    result_for_get['except_report'] = report
+    return result_for_get
+
+  def get_stdin_iterator(self, pctl):
+    result_for_get =  {'data_iter': None, 'except_report': None}
+
+    try:
+      self.report_verbose(pctl,
+          "------- GeoCSV_Validate - getting stdin iterator")
+      result_for_get['data_iter'] = sys.stdin.readlines().__iter__()
+      pctl['next_data_function'] = self.nextBytesFromString
+    except Exception as e:
+      metrcs = self.createMetricsObj()
+      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
+      report = self.check_geocsv_fields(metrcs, gecsv)
+      report['ERROR_Exception'] = "Failed stdin iterator create: " + str(e)
+      result_for_get['except_report'] = report
+      return result_for_get
+
+    self.report_verbose(pctl, \
+        "------- GeoCSV_Validate - created stdin iterator,  " + \
+        "datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
+    return result_for_get
+
   def get_resrc_iterator(self, pctl):
     result_for_get =  {'data_iter': None, 'except_report': None}
     if pctl['input_resrc'] == None:
@@ -124,6 +156,7 @@ class GeocsvValidator(object):
           "------- GeoCSV_Validate - opening input_resrc: " +  pctl['input_resrc'])
       response = urlopen(pctl['input_resrc'])
       result_for_get['data_iter'] = response.readlines().__iter__()
+      pctl['next_data_function'] = self.nextBytesFromBytes
     except HTTPError as e:
       metrcs = self.createMetricsObj()
       gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
@@ -168,6 +201,7 @@ class GeocsvValidator(object):
           str(len(pctl['input_bytes'])))
       bytes_obj = io.BytesIO(pctl['input_bytes'])
       result_for_get['data_iter'] = bytes_obj.readlines().__iter__()
+      pctl['next_data_function'] = self.nextBytesFromBytes
     except Exception as e:
       metrcs = self.createMetricsObj()
       gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
@@ -181,8 +215,15 @@ class GeocsvValidator(object):
         str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
+  def nextBytesFromString(self, data_iter):
+    return next(data_iter).encode()
+
+  def nextBytesFromBytes(self, data_iter):
+    return next(data_iter)
+
   def get_a_line(self, data_iter, metrcs, pctl):
-    rowStr = next(data_iter).decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
+    nxtLine = pctl['next_data_function'](data_iter)
+    rowStr = nxtLine.decode('utf-8').rstrip(MY_LINE_BREAK_CHARS)
     metrcs['totalLineCnt'] += 1
     # this is aproximately the byte count, there may be more than one
     # line break character, but more importantly, this allow for counting
@@ -513,10 +554,18 @@ class GeocsvValidator(object):
   def doReport(self, pctl):
     self.processingStartTime = datetime.datetime.now(pytz.utc)
 
-    if pctl['input_resrc']:
+    if pctl['version']:
+      # match other services, not in report form, just a string, no LF or CRLF
+      self.version()
+      return
+    elif pctl['stdin']:
+      result_for_get = self.get_stdin_iterator(pctl)
+    elif pctl['input_resrc']:
       result_for_get = self.get_resrc_iterator(pctl)
-    else:
+    elif pctl['input_bytes']:
       result_for_get = self.get_bytes_iterator(pctl)
+    else:
+      result_for_get = self.get_no_input_specified(pctl)
 
     if result_for_get['except_report'] == None:
       # no error report, continue
@@ -649,6 +698,8 @@ def default_program_control():
   pctl['null_fields'] = False  # show lines if any field is null and respective metrics
   pctl['field_type'] = False # when GeoCSV field_type header line is present, check respective fields for integer, float, datetime
   pctl['write_report'] = True  # report is not written when False (i.e. keeps unit test report small)
+  pctl['stdin'] = False # set True to read from stdin
+  pctl['version'] = False # set True to print version and return immediately
 
   return pctl
 
@@ -660,7 +711,7 @@ def parse_cmd_lines():
       'standard description, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
 
   parser.add_argument("--input_resrc", help='Input a URL or filename', \
-      type=str, required=True, default='nameRequired')
+      type=str, required=False)
   parser.add_argument('--verbose', \
       help='When true, show metrics for every data line', type=str2bool, default=False)
   parser.add_argument('--octothorp', \
@@ -680,6 +731,12 @@ def parse_cmd_lines():
       help='Do not write report lines when false, this is used to make ' + \
       'succinct unit test reports, but may be useful in a pipline workflow)', \
       type=str2bool, default=True)
+  # 'store_true' is builtin action that set parameter to true if it exist on the
+  # command line without an argument
+  parser.add_argument('--STDIN', \
+      help='When parameter exist, read data from stdin', action='store_true')
+  parser.add_argument('--version', \
+      help='When parameter exist, return only version, no report', action='store_true')
 
   args = parser.parse_args()
 
@@ -691,6 +748,8 @@ def parse_cmd_lines():
   pctl['null_fields'] = args.null_fields
   pctl['field_type'] = args.field_type
   pctl['write_report'] = args.write_report
+  pctl['stdin'] = args.STDIN
+  pctl['version'] = args.version
 
   return pctl
 
@@ -698,12 +757,7 @@ if __name__ == "__main__" \
     or __name__ == "GeocsvValidate" \
     or __name__ == "validator.GeocsvValidate":
 
-  if '--version' in sys.argv:
-    # skip parsing if version is in command line list
-    validateObj = GeocsvValidator(sys.stdout)
-    validateObj.version()
-  else:
-    pctl = parse_cmd_lines()
-    validateObj = GeocsvValidator(sys.stdout)
-    validateObj.doReport(pctl)
+  pctl = parse_cmd_lines()
+  validateObj = GeocsvValidator(sys.stdout)
+  validateObj.doReport(pctl)
 
