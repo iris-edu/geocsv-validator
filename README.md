@@ -37,47 +37,49 @@ test | unit test
 The current version can be used as follows:
 
 ``` bash
-./GeocsvValidator.py
-
-usage: GeocsvValidator.py [-h] --input_resrc INPUT_RESRC [--verbose VERBOSE]
-                          [--octothorp OCTOTHORP] [--unicode UNICODE]
-                          [--null_fields NULL_FIELDS]
-                          [--field_type FIELD_TYPE]
-                          [--write_report WRITE_REPORT]
+validator/GeocsvValidator.py -h
+usage: GeocsvValidator.py [-h] [--input_resrc INPUT_RESRC] [--verbose VERBOSE]
+                         [--octothorp OCTOTHORP] [--unicode UNICODE]
+                         [--null_fields NULL_FIELDS]
+                         [--field_type FIELD_TYPE]
+                         [--write_report WRITE_REPORT] [--STDIN] [--version]
 
 Read a GeoCSV file and check for conformance against the GeoCSV standard
 description, see http://geows.ds.iris.edu/documents/GeoCSV.pdf
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --input_resrc INPUT_RESRC
-                        Input a URL or filename
-  --verbose VERBOSE     When true, show metrics for every data line
-  --octothorp OCTOTHORP
-                        When true, show metrics for lines with "#" after initial
-                        start of data lines
-  --unicode UNICODE     When true, show metrics for lines with unicode
-  --null_fields NULL_FIELDS
-                        When true, show metrics for lines if any field is null
-  --field_type FIELD_TYPE
-                        When true, show metrics for lines if any field does
-                        not match its respective field_type, i.e. integer,
-                        float, or datetime
-  --write_report WRITE_REPORT
-                        Do not write report lines when false, this is used to
-                        make succinct unit test reports, but may be useful in
-                        a pipline workflow)
+ -h, --help            show this help message and exit
+ --input_resrc INPUT_RESRC
+                       Input a URL or filename
+ --verbose VERBOSE     When true, show metrics for every data line
+ --octothorp OCTOTHORP
+                       When true, show metrics for lines with # after initial
+                       start of data lines
+ --unicode UNICODE     When true, show metrics for lines with unicode
+ --null_fields NULL_FIELDS
+                       When true, show metrics for lines if any field is null
+ --field_type FIELD_TYPE
+                       When true, show metrics for lines if any field does
+                       not match its respective field_type, i.e. integer,
+                       float, or datetime
+ --write_report WRITE_REPORT
+                       Do not write report lines when false, this is used to
+                       make succinct unit test reports, but may be useful in
+                       a pipline workflow)
+ --STDIN               When parameter exist, read data from stdin
+ --version             When parameter exist, return only version, no report
 
-
-./GeocsvValidator.py --input_resrc 'http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv'
+validator/GeocsvValidator.py --input_resrc 'http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv'
 # this run will show 174 lines read and a validation of False because at least one field is null, in this particular case 63 fields are null.
 
 ```
 
 ## Running the tornado server
 
+This tornado server is setup for selected local testing only, it is not setup for production.
+
 ``` bash
-./geocsvTornadoService.py
+service/geocsvTornadoService.py
 
 # by default, the service is listening on port 8989
 # and will refer to http://localhost:8988 for documentation.
