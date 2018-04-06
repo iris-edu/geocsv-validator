@@ -3,13 +3,18 @@
 A command line tool for validating GeoCSV content. There is also a prototype server for testing the command line tool.
 
 - 2018-01-31 - current version loaded into iris-edu
-- 2018-03-15 - version 0.93,
+- 2018-03-15 - version 0.93
   - added field_type check
   - added version method
   - added runaway limit check at 1,000,000,000 bytes
   - added ability to read file rather than thru file://, breaking change to API, input_url changed to input_resrc
   - update some messages, add timestamp to tornado log messages, and control env variables
   - add validate of multiple GeoCSV data sets in same stream
+- 2018-04-06 - version 0.94
+  - remove Docker folders
+  - reset size limit to 400 MB, 4 times current channel metadata size
+  - add reading from stdin when --STDIN parameter present
+  - small changes to report messages
 
 ## Concept of operation:
 
@@ -90,25 +95,4 @@ http://localhost:8989/geows/geocsv/1/validate?input_resrc=http://service.iris.ed
 http://localhost:8989/geows/geocsv/1/version
 
 http://localhost:8989/geows/geocsv/1/vforms
-```
-
-## Docker
-
-``` bash
-# use this script to build the docker image
-./build_geocsv_validator.bash
-
-# to run locally and expose the internal, default port 8989 as external 8989
-docker run -ti -p 8989:8989 --name geocsv_validator geocsv_validator:v1
-
-# to deploy when a documentation service is available and change the
-# default port tornado starts on to 8950
-#
-# GEOCSV_LISTENING_PORT will configure tornado to listen on 8950
-# -p 8989:8950 will expose the container at port 8989 using the tornado port defined by GEOCSV_LISTENING_PORT
-# GEOCSV_DOCUMENT_URL defines the URL for a documentation service when http://localhost:8989/geows/geocsv/1/ is requested or any other un-routed URL
-sudo docker run -d -p 8989:8950 --env GEOCSV_LISTENING_PORT='8950' --env GEOCSV_DOCUMENT_URL='http://cube1:8988' --name geocsv_validator geocsv_validator:v1
-
-
-
 ```
