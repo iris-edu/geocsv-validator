@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-jsonview/1.2.3/jquery.jsonview.js"></script>
+    <style src="https://cdnjs.cloudflare.com/ajax/libs/jquery-jsonview/1.2.3/jquery.jsonview.css"></style>
+  </head>
+  <body>
+    <h1></h1>
+    <h2>GeoWS Geocsv Validator - OpenAPI Description</h2>
+    <div id="element"></div>
+  </body>
+    <script>
+      var apiURL = 'http://geows.ds.iris.edu/geows/geocsv/1/openapi-json';
+      someData = $.get( apiURL, function( someJson ) {
+          $('#element').JSONView(someJson)
+      });
+    </script>
+</html>

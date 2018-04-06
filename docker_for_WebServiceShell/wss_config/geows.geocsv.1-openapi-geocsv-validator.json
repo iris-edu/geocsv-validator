@@ -233,43 +233,11 @@
                     }
                 }
             }
-        },
-        "/geocsv/1/vforms": {
-            "get": {
-                "tags": [
-                    "GeoCSV"
-                ],
-                "summary": "Allows form input ",
-                "description": "<p>The <strong>vform</strong> page provides forms to enter text or file input)",
-                "operationId": "getVforms",
-                "responses": {
-                    "200": {
-                        "description": "Successful",
-                        "content": {
-                            "text/plain": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "content": {
-                            "text/plain": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     },
     "servers": [
         {
-            "url": "http://cube1:8989/geows"
+            "url": "http://geows.ds.iris.edu/geows"
         }
     ],
     "components": {
