@@ -26,6 +26,8 @@ import collections
 import io
 import dateutil.parser
 
+GEOCSV_CURRENT_VERSION = '0.94'
+
 MY_LINE_BREAK_CHARS = '\n\r'
 
 # definition for keyword
@@ -58,7 +60,7 @@ class GeocsvValidator(object):
   # stdwriter - an object with a write method, expecting, expecting
   #             something like sys.stdout or tornado.web.RequestHandler
   def __init__(self, stdwriter):
-    self.current_version = 0.93
+    self.current_version = 0.94
     self.stdwriter = stdwriter
 
     if sys.version_info[0] < 3:
@@ -69,7 +71,7 @@ class GeocsvValidator(object):
     self.field_type_test_functions = []
 
   def version(self):
-    self.stdwriter.write(str(self.current_version))
+    self.stdwriter.write(str(GEOCSV_CURRENT_VERSION))
 
   def try_field_type_noop(self, testStr):
     return 0
@@ -525,7 +527,8 @@ class GeocsvValidator(object):
     processing_seconds =  datetime.datetime.now(pytz.utc) - self.processingStartTime
     rstr = "-- GeoCSV_Validate_Report  datetime: " + \
         str(datetime.datetime.now(pytz.utc).isoformat()) + \
-        "  processing_seconds: " + str(processing_seconds.total_seconds()) + "\n"
+        "  processing_seconds: " + str(processing_seconds.total_seconds()) + \
+        "  version: " + GEOCSV_CURRENT_VERSION + "\n"
     for itm in report:
       if isinstance(report[itm], dict) and itm == 'ERROR_between_these_geocsv_fields':
         rstr += "-- " + str(itm) + ": " + "\n"
@@ -589,7 +592,7 @@ class GeocsvValidator(object):
     # check for start
     if (not gecsv['geocsv_start_found']):
       report['GeoCSV_validated'] = False
-      report['WARNING_no_geocsv_start'] = 'ERROR, start of GeoCSV not found,' + \
+      report['WARNING_no_geocsv_start'] = 'No GeoCSV start-of-header found,' + \
           ' expecting this line: ' + str(GEOCSV_REQUIRED_START_LITERAL)
 
     # check for consistent geocsv field parameter values
