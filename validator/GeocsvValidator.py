@@ -172,6 +172,7 @@ class GeocsvValidator(object):
         # input name did not work as URL, now try as a file
         file = open(pctl['input_resrc'], 'rb')
         result_for_get['data_iter'] = file.readlines().__iter__()
+        pctl['next_data_function'] = self.nextBytesFromBytes
       except Exception as e2:
         metrcs = self.createMetricsObj()
         gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
