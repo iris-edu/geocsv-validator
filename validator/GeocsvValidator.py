@@ -128,7 +128,13 @@ class GeocsvValidator(object):
       self.report_verbose(pctl,
           "------- GeoCSV_Validate - getting stdin iterator")
       result_for_get['data_iter'] = sys.stdin.readlines().__iter__()
-      pctl['next_data_function'] = self.nextBytesFromString
+      if sys.version_info[0] < 3:
+        # python 2 str is treated as bytes
+        pctl['next_data_function'] = self.nextBytesFromBytes
+      else:
+        # python 3 stdin iterator returns a class 'str', but it needs
+        # to be bytes for further processing
+        pctl['next_data_function'] = self.nextBytesFromString
     except Exception as e:
       metrcs = self.createMetricsObj()
       gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
@@ -320,10 +326,17 @@ class GeocsvValidator(object):
   # detect unicode and force to ASCII
   def handle_unicode(self, rowStr, metrcs, pctl):
     metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
-    if pctl['verbose'] or pctl['unicode']:
-      self.stdwriter.write("--unicode-- " +  str(list(metrcs.values())) + \
-          "  line: " +  str(rowStr.rstrip()) + "\n")
     rowASCII = rowStr.encode('ascii', 'replace').decode('ascii')
+    if pctl['verbose'] or pctl['unicode']:
+      try:
+        # try to print the actual unicode line, but, depending on the
+        # version of python and running environment, this may not
+        # work, so except out and print the forced version
+        self.stdwriter.write("--unicode-- " +  str(list(metrcs.values())) + \
+            "  line: " +  str(rowStr.rstrip()) + "\n")
+      except UnicodeEncodeError:
+        self.stdwriter.write("--unicode-- " +  str(list(metrcs.values())) + \
+            "  line: " +  str(rowASCII) + "\n")
     return rowASCII
 
   def force_to_ASCII_py_v2(self, rowStr, metrcs, pctl):
