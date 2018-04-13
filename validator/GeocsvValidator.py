@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# enable code that runs in python 2 and python 3
+# Setup code that runs in python 2 and python 3
 # Note: "future" must be installed in both python 2 and 3 environments
 from __future__ import absolute_import, division, print_function
 from builtins import *
@@ -8,7 +8,7 @@ from builtins import *
 from future.builtins.disabled import *
 
 # for urllib2 compatability
-## replacing this --> import urllib2
+# replacing this --> import urllib2
 from future.standard_library import install_aliases
 install_aliases()
 from urllib.parse import urlparse, urlencode
@@ -18,7 +18,6 @@ from urllib.error import HTTPError
 import sys
 import csv
 import re
-import pprint
 import datetime
 import pytz
 import argparse
@@ -41,19 +40,21 @@ GEOCSV_REQUIRED_START_LITERAL = '# dataset: GeoCSV 2.0'
 
 GEOCSV_FIELD_TYPE = 'field_type'
 
-GEOCSV_COLUMN_VALUED_KEYWORDS = {'field_unit', 'field_type',
-   'field_long_name', 'field_standard_name', 'field_missing'}
+GEOCSV_COLUMN_VALUED_KEYWORDS = {
+    'field_unit', 'field_type', 'field_long_name', 'field_standard_name',
+    'field_missing'}
 
-GEOCSV_WELL_KNOWN_KEYWORDS = {'dataset', 'delimiter', 'attribution',
-    'standard_name_cv', 'title', 'history', 'institution', 'source',
-    'comment', 'references'}.union(GEOCSV_COLUMN_VALUED_KEYWORDS)
+GEOCSV_WELL_KNOWN_KEYWORDS = {
+    'dataset', 'delimiter', 'attribution', 'standard_name_cv', 'title',
+    'history', 'institution', 'source', 'comment', 'references'}.union(
+    GEOCSV_COLUMN_VALUED_KEYWORDS)
 
-GEOCSV_WELL_KNOWN_FIELD_TYPE = {'string', 'integer', 'float',
-    'datetime'}
+GEOCSV_WELL_KNOWN_FIELD_TYPE = {'string', 'integer', 'float', 'datetime'}
 
 # set limit to 4 times channel query size, and a little more
 # e.g. 96867459 * 4 = 387469836 ~ 400 MB
-GEOCSV_RUNAWAY_LIMIT =  1024 * 1024 * 400
+GEOCSV_RUNAWAY_LIMIT = 1024 * 1024 * 400
+
 
 class GeocsvValidator(object):
   """
@@ -110,8 +111,9 @@ class GeocsvValidator(object):
       return 0
 
     try:
-## for UTC      dtutc = dateutil.parser.parse(testStr).astimezone(pytz.utc)
-      dtutc = dateutil.parser.parse(testStr)
+      # Note: have to relax this for now
+      # for UTC#      dt_utc = dateutil.parser.parse(testStr).astimezone(pytz.utc)
+      dateutil.parser.parse(testStr)
     except:
       return 1
     return 0
@@ -119,18 +121,18 @@ class GeocsvValidator(object):
   # Return a result object with an error report for the case where the
   # input parameters do not specify any input resource.
   def get_no_input_specified(self, pctl):
-    result_for_get =  {'data_iter': None, 'except_report': None}
+    result_for_get = {'data_iter': None, 'except_report': None}
 
     metrcs = self.createMetricsObj()
     gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
     report = self.check_geocsv_fields(metrcs, gecsv)
     report['ERROR_no_input_specified'] = \
-      'No data input option was selected'
+        'No data input option was selected'
     result_for_get['except_report'] = report
     return result_for_get
 
   def get_stdin_iterator(self, pctl):
-    result_for_get =  {'data_iter': None, 'except_report': None}
+    result_for_get = {'data_iter': None, 'except_report': None}
 
     try:
       self.report_verbose(pctl,
@@ -151,13 +153,13 @@ class GeocsvValidator(object):
       result_for_get['except_report'] = report
       return result_for_get
 
-    self.report_verbose(pctl, \
-        "------- GeoCSV_Validate - created stdin iterator,  " + \
+    self.report_verbose(pctl,
+        "------- GeoCSV_Validate - created stdin iterator,  " +
         "datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
   def get_resrc_iterator(self, pctl):
-    result_for_get =  {'data_iter': None, 'except_report': None}
+    result_for_get = {'data_iter': None, 'except_report': None}
     if pctl['input_resrc'] == None:
       metrcs = self.createMetricsObj()
       gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
@@ -169,7 +171,7 @@ class GeocsvValidator(object):
 
     try:
       self.report_verbose(pctl,
-          "------- GeoCSV_Validate - opening input_resrc: " +  pctl['input_resrc'])
+          "------- GeoCSV_Validate - opening input_resrc: " + pctl['input_resrc'])
       response = urlopen(pctl['input_resrc'])
       result_for_get['data_iter'] = response.readlines().__iter__()
       pctl['next_data_function'] = self.nextBytesFromBytes
@@ -196,13 +198,13 @@ class GeocsvValidator(object):
         result_for_get['except_report'] = report
         return result_for_get
 
-    self.report_verbose(pctl, \
-        "------- GeoCSV_Validate - resource found, created data iterator,  " + \
+    self.report_verbose(pctl,
+        "------- GeoCSV_Validate - resource found, created data iterator,  " +
         "datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
   def get_bytes_iterator(self, pctl):
-    result_for_get =  {'data_iter': None, 'except_report': None}
+    result_for_get = {'data_iter': None, 'except_report': None}
     if pctl['input_bytes'] == None:
       metrcs = self.createMetricsObj()
       gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
@@ -213,8 +215,8 @@ class GeocsvValidator(object):
       return result_for_get
 
     try:
-      self.report_verbose(pctl, \
-          "------- GeoCSV_Validate - setup input_bytes len: " + \
+      self.report_verbose(pctl,
+          "------- GeoCSV_Validate - setup input_bytes len: " +
           str(len(pctl['input_bytes'])))
       bytes_obj = io.BytesIO(pctl['input_bytes'])
       result_for_get['data_iter'] = bytes_obj.readlines().__iter__()
@@ -227,8 +229,8 @@ class GeocsvValidator(object):
       result_for_get['except_report'] = report
       return result_for_get
 
-    self.report_verbose(pctl, \
-        "------- GeoCSV_Validate - read bytes iterator created,  datetime: " + \
+    self.report_verbose(pctl,
+        "------- GeoCSV_Validate - read bytes iterator created,  datetime: " +
         str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
@@ -268,7 +270,7 @@ class GeocsvValidator(object):
 
         # do geocsv processing
         mObj = re.match(KEYWORD_REGEX, rowStr)
-        if mObj == None:
+        if mObj is None:
           # no start of geocsv yet, treat as comment line, count and ignore
           metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
           self.report_octothorp(pctl, metrcs, rowStr)
@@ -307,7 +309,7 @@ class GeocsvValidator(object):
           # i.e. create a list of one row
           field_type_list = []
           rowiter = iter(list([gecsv[GEOCSV_FIELD_TYPE]]))
-          csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
+          csvreadr = csv.reader(rowiter, delimiter=gecsv['delimiter'])
           for row in csvreadr:
             field_type_list = row
 
@@ -323,7 +325,7 @@ class GeocsvValidator(object):
               self.field_type_test_functions.append(self.try_field_type_noop)
             else:
               metrcs['unknownFieldTypeCnt'] += 1
-              self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) + \
+              self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) +
                   " line:" + str(row))
               self.field_type_test_functions.append(self.try_field_type_noop)
     except StopIteration:
@@ -341,11 +343,11 @@ class GeocsvValidator(object):
       try:
         # Try to print the unicode line, but when this does not work,
         # except out and print the ASCII version
-        self.stdwriter.write("--unicode-- " +  str(list(metrcs.values())) + \
-            "  line: " +  str(rowStr.rstrip()) + "\n")
+        self.stdwriter.write("--unicode-- " + str(list(metrcs.values())) +
+            "  line: " + str(rowStr.rstrip()) + "\n")
       except UnicodeEncodeError:
-        self.stdwriter.write("--unicode-- " +  str(list(metrcs.values())) + \
-            "  line: " +  str(rowASCII) + "\n")
+        self.stdwriter.write("--unicode-- " + str(list(metrcs.values())) +
+            "  line: " + str(rowASCII) + "\n")
     return rowASCII
 
   def force_to_ASCII_py_v2(self, rowStr, metrcs, pctl):
@@ -369,7 +371,7 @@ class GeocsvValidator(object):
     # csv module interface is not setup to stream one line at a time,
     # so make a list of 1 using the incoming row and convert to an iterator
     rowiter = iter(list([rowStr]))
-    csvreadr = csv.reader(rowiter, delimiter = delimiter)
+    csvreadr = csv.reader(rowiter, delimiter=delimiter)
     for row in csvreadr:
       metrcs['dataLineCnt'] = metrcs['dataLineCnt'] + 1
       metrcs['dataFieldsCntSet'].add(len(row))
@@ -399,16 +401,17 @@ class GeocsvValidator(object):
       #       row so that when looking at verbose listing, the occurrence of a
       #       counter change is on the same line it occurred, not one before
       #       or one after
-      self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) + \
+      self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) +
           " line:" + str(row))
 
       if anyNulls and pctl['null_fields']:
-        self.stdwriter.write("--null_fields-- " + str(list(metrcs.values())) + \
+        self.stdwriter.write("--null_fields-- " + str(list(metrcs.values())) +
             "  line: " + str(rowStr.rstrip()) + "\n")
 
       if anyTypeErrs and pctl['field_type']:
-        self.stdwriter.write("--unexpected_field_type-- " + str(list(metrcs.values())) + \
-            "  line: " + str(rowStr.rstrip()) + "\n")
+        self.stdwriter.write("--unexpected_field_type-- " +
+            str(list(metrcs.values())) + "  line: " + str(rowStr.rstrip()) +
+            "\n")
 
       if len(row) <= 0:
         # not sure this can ever happen
@@ -419,7 +422,7 @@ class GeocsvValidator(object):
   # octothorp - name for hash symbol
   def report_octothorp(self, pctl, metrcs, rowStr):
     if pctl['octothorp']:
-      self.stdwriter.write("--octothorp-- " + str(list(metrcs.values())) + \
+      self.stdwriter.write("--octothorp-- " + str(list(metrcs.values())) +
           "  line: " + str(rowStr.rstrip()) + "\n")
 
   # Create an object to hold counts about the input text as the text is
@@ -445,10 +448,10 @@ class GeocsvValidator(object):
   # this structure is printed out and can be checked for incorrect spelling of
   # keywords, etc.
   def createGeocsvObj(self, input_resrc, input_bytes):
-    gecsv = {'geocsv_start_found': False, 'input_resrc': input_resrc, \
+    gecsv = {'geocsv_start_found': False, 'input_resrc': input_resrc,
         'delimiter': ',', 'other_keywords': {}}
     # don't put the raw bytes in this structure
-    if input_bytes == None:
+    if input_bytes is None:
       gecsv['input_bytes_len'] = None
     else:
       gecsv['input_bytes_len'] = len(input_bytes)
@@ -460,11 +463,11 @@ class GeocsvValidator(object):
     # read expected geocsv lines until a non-octothorp line is read
     rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
 
-    self.report_verbose(pctl, \
-        "------- GeoCSV_Validate - parsed header and status parameters: " + \
+    self.report_verbose(pctl,
+        "------- GeoCSV_Validate - parsed header and status parameters: " +
         str(gecsv))
-    self.report_verbose(pctl, \
-        "------- GeoCSV_Validate - after header read metrics: " + \
+    self.report_verbose(pctl,
+        "------- GeoCSV_Validate - after header read metrics: " +
           str(list(metrcs.values())))
 
     # handle first non-geocsv line after finished reading geocsv header lines
@@ -482,15 +485,15 @@ class GeocsvValidator(object):
   def validate(self, pctl, data_iter):
     metrcs = self.createMetricsObj()
 
-    self.report_any(pctl, "\n" + \
-      "------- GeoCSV_Validate - starting validate  datetime: " + \
+    self.report_any(pctl, "\n" +
+      "------- GeoCSV_Validate - starting validate  datetime: " +
       str(datetime.datetime.now(pytz.utc).isoformat()))
 
     gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
 
     # note: creating a list of keys here for compatability between py 2.x and 3.x
     msglist = list(metrcs.keys())
-    self.report_any(pctl, "------- GeoCSV_Validate - metric fields: " + \
+    self.report_any(pctl, "------- GeoCSV_Validate - metric fields: " +
       str(msglist))
 
     looping = True
@@ -508,7 +511,7 @@ class GeocsvValidator(object):
           # until first non-octothorp line
           if gecsv['geocsv_start_found'] == False:
             mObj = re.match(GEOCSV_REQUIRED_START_REGEX, rowStr)
-            if mObj == None:
+            if mObj is None:
               if gecsv['geocsv_start_found'] == False:
                 metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
                 self.report_octothorp(pctl, metrcs, rowStr)
@@ -517,7 +520,7 @@ class GeocsvValidator(object):
           else:
             # ignore octothorp lines after reading geocsv lines
             mObj = re.match(GEOCSV_REQUIRED_START_REGEX, rowStr)
-            if mObj == None:
+            if mObj is None:
               metrcs['ignoreLineCnt'] = metrcs['ignoreLineCnt'] + 1
               self.report_octothorp(pctl, metrcs, rowStr)
             else:
@@ -539,18 +542,18 @@ class GeocsvValidator(object):
           # handle non-octothorp lines
           self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl, False)
       except StopIteration:
-        self.report_any(pctl, "------- GeoCSV_Validate - finished validate, datetime: " + \
-            str(datetime.datetime.now(pytz.utc).isoformat()))
+        self.report_any(pctl, "------- GeoCSV_Validate - finished validate," +
+            " datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
         looping = False
       finally:
-        ##response.close()
+        # response.close()
         pass
 
     report = self.check_geocsv_fields(metrcs, gecsv)
     return report
 
   def createReportStr(self, report):
-    processing_seconds =  datetime.datetime.now(pytz.utc) - self.processingStartTime
+    processing_seconds = datetime.datetime.now(pytz.utc) - self.processingStartTime
     rstr = "-- GeoCSV_Validate_Report  datetime: " + \
         str(datetime.datetime.now(pytz.utc).isoformat()) + \
         "  processing_seconds: " + str(processing_seconds.total_seconds()) + \
@@ -639,7 +642,7 @@ class GeocsvValidator(object):
     fldSet = GEOCSV_COLUMN_VALUED_KEYWORDS.intersection(set(gecsv.keys()))
     for fldname in fldSet:
       rowiter = iter(list([gecsv[fldname]]))
-      csvreadr = csv.reader(rowiter, delimiter = gecsv['delimiter'])
+      csvreadr = csv.reader(rowiter, delimiter=gecsv['delimiter'])
       for row in csvreadr:
         thisFldDict[fldname] = gecsv[fldname]
         thisFldDict[fldname + "_len"] = len(row)
@@ -658,10 +661,10 @@ class GeocsvValidator(object):
 
     # check for consistent field sizes between data and geocsv field parameters
     if len(metrcs['dataFieldsCntSet'].union(gecsvFieldCntSet)) >\
-        max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
+            max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
       report['GeoCSV_validated'] = False
-      report['ERROR_ geocsv_to_data_field_size'] = 'A row size is inconsistent ' + \
-          'with geocsv field size, data row sizes: ' + str(metrcs['dataFieldsCntSet']) + \
+      report['ERROR_ geocsv_to_data_field_size'] = 'A row size is inconsistent' + \
+          ' with geocsv field size, data row sizes: ' + str(metrcs['dataFieldsCntSet']) + \
           '  geocsv field sizes: ' + str(gecsvFieldCntSet)
       showGeoCSVFldsDict = True
 
@@ -670,14 +673,14 @@ class GeocsvValidator(object):
     if report['GeoCSV_validated']:
       # only check if data field and keyword fields are consistent
       if 1 in metrcs['dataFieldsCntSet'] and len(metrcs['dataFieldsCntSet']) == 1 \
-          and 1 in gecsvFieldCntSet and len(gecsvFieldCntSet) == 1:
-        ##report['GeoCSV_validated'] = False
+         and 1 in gecsvFieldCntSet and len(gecsvFieldCntSet) == 1:
+        # note: not set#report['GeoCSV_validated'] = False
         report['INFO_all_fields_sizes_are_1'] = 'This may be correct, or the delimiter ' + \
             'keyword may be missing.'
 
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
-      ##report['GeoCSV_validated'] = False
+      # note: not set#report['GeoCSV_validated'] = False
       report['INFO_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
 
@@ -696,7 +699,7 @@ class GeocsvValidator(object):
 
     # check for unicode in field values
     if metrcs['unicodeLineCnt'] > 0:
-      ##report['GeoCSV_validated'] = False
+      # note: not set#report['GeoCSV_validated'] = False
       report['INFO_unicode_in_field'] = 'At least one line has a data field ' + \
           'with a UNICODE character, count: ' + str(metrcs['unicodeLineCnt'])
 
@@ -714,23 +717,25 @@ class GeocsvValidator(object):
 
     return report
 
+
 # Helper for command line parsing in argparse to increase flexibility
 # for accepatble values for True and False
+# from https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
 def str2bool(v):
-  # from https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
   if v.lower() in ('yes', 'true', 't', 'y', '1'):
       return True
   elif v.lower() in ('no', 'false', 'f', 'n', '0'):
       return False
   else:
-      raise argparse.ArgumentTypeError('String version of Boolean value' + \
+      raise argparse.ArgumentTypeError('String version of Boolean value' +
         ' expected, value given: ' + str(v))
+
 
 # Create a default control structure for a validate run.
 def default_program_control():
   pctl = {}
 
-  # A regular URL that returns GeoCSV text data 
+  # A regular URL that returns GeoCSV text data
   pctl['input_resrc'] = None
 
   # Input raw bytes, # Note: if both input_resrc and input_bytes are
@@ -763,39 +768,41 @@ def default_program_control():
 
   return pctl
 
+
 def parse_cmd_lines():
   pctl = default_program_control()
 
-  parser = argparse.ArgumentParser(description=\
-      'Read a GeoCSV file and check for conformance against the GeoCSV ' + \
-      'standard description, see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
+  parser = argparse.ArgumentParser(
+      description='Read a GeoCSV file and check for conformance against' +
+      ' the GeoCSV standard description,' +
+      ' see http://geows.ds.iris.edu/documents/GeoCSV.pdf')
 
-  parser.add_argument("--input_resrc", help='Input a URL or filename', \
+  parser.add_argument("--input_resrc", help='Input a URL or filename',
       type=str, required=False)
-  parser.add_argument('--verbose', \
+  parser.add_argument('--verbose',
       help='When true, show metrics for every data line', type=str2bool, default=False)
-  parser.add_argument('--octothorp', \
-      help='When true, show metrics for lines with # after initial start of data lines', \
+  parser.add_argument('--octothorp',
+      help='When true, show metrics for lines with # after initial start of data lines',
       type=str2bool, default=False)
-  parser.add_argument('--unicode', \
-      help='When true, show metrics for lines with unicode', \
+  parser.add_argument('--unicode',
+      help='When true, show metrics for lines with unicode',
       type=str2bool, default=False)
-  parser.add_argument('--null_fields', \
-      help='When true, show metrics for lines if any field is null', \
+  parser.add_argument('--null_fields',
+      help='When true, show metrics for lines if any field is null',
       type=str2bool, default=False)
-  parser.add_argument('--field_type', \
-      help='When true, show metrics for lines if any field does not match its ' + \
-      'respective field_type, i.e. integer, float, or datetime', \
+  parser.add_argument('--field_type',
+      help='When true, show metrics for lines if any field does not match its ' +
+      'respective field_type, i.e. integer, float, or datetime',
       type=str2bool, default=False)
-  parser.add_argument('--write_report', \
-      help='Do not write report lines when false, this is used to make ' + \
-      'succinct unit test reports, but may be useful in a pipline workflow)', \
+  parser.add_argument('--write_report',
+      help='Do not write report lines when false, this is used to make ' +
+      'succinct unit test reports, but may be useful in a pipline workflow)',
       type=str2bool, default=True)
   # 'store_true' is builtin action that set parameter to true if it exist on the
   # command line without an argument
-  parser.add_argument('--STDIN', \
+  parser.add_argument('--STDIN',
       help='When parameter exist, read data from stdin', action='store_true')
-  parser.add_argument('--version', \
+  parser.add_argument('--version',
       help='When parameter exist, return only version, no report', action='store_true')
 
   args = parser.parse_args()
@@ -814,10 +821,9 @@ def parse_cmd_lines():
   return pctl
 
 if __name__ == "__main__" \
-    or __name__ == "GeocsvValidate" \
-    or __name__ == "validator.GeocsvValidate":
+   or __name__ == "GeocsvValidate" \
+   or __name__ == "validator.GeocsvValidate":
 
   pctl = parse_cmd_lines()
   validateObj = GeocsvValidator(sys.stdout)
   validateObj.doReport(pctl)
-
