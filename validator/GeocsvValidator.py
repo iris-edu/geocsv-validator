@@ -56,11 +56,17 @@ GEOCSV_WELL_KNOWN_FIELD_TYPE = {'string', 'integer', 'float',
 GEOCSV_RUNAWAY_LIMIT =  1024 * 1024 * 400
 
 class GeocsvValidator(object):
+  """
+  GeocsvValidator reads and validates streaming text data in GeoCSV
+  format.
 
-  # stdwriter - an object with a write method, expecting, expecting
+  See http://geows.ds.iris.edu/documents/GeoCSV.pdf
+  """
+
+  # stdwriter - a write type object with a write method, i.e.
   #             something like sys.stdout or tornado.web.RequestHandler
   def __init__(self, stdwriter):
-    self.current_version = 0.94
+    self.current_version = 0.95
     self.stdwriter = stdwriter
 
     if sys.version_info[0] < 3:
@@ -110,6 +116,8 @@ class GeocsvValidator(object):
       return 1
     return 0
 
+  # Return a result object with an error report for the case where the
+  # input parameters do not specify any input resource.
   def get_no_input_specified(self, pctl):
     result_for_get =  {'data_iter': None, 'except_report': None}
 
@@ -175,7 +183,7 @@ class GeocsvValidator(object):
       return result_for_get
     except Exception as e:
       try:
-        # input name did not work as URL, now try as a file
+        # Input name string did not succeed as a URL, now try as a file
         file = open(pctl['input_resrc'], 'rb')
         result_for_get['data_iter'] = file.readlines().__iter__()
         pctl['next_data_function'] = self.nextBytesFromBytes
@@ -189,7 +197,7 @@ class GeocsvValidator(object):
         return result_for_get
 
     self.report_verbose(pctl, \
-        "------- GeoCSV_Validate - received reply, created data iterator,  " + \
+        "------- GeoCSV_Validate - resource found, created data iterator,  " + \
         "datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
@@ -323,15 +331,16 @@ class GeocsvValidator(object):
 
     return rowStr
 
-  # detect unicode and force to ASCII
+  # Force to ASCII
+  # The main reason for this is that the cvs reader in python 2 does not
+  # handle unicode and station data has a few lines which contain unicode
   def handle_unicode(self, rowStr, metrcs, pctl):
     metrcs['unicodeLineCnt'] = metrcs['unicodeLineCnt'] + 1
     rowASCII = rowStr.encode('ascii', 'replace').decode('ascii')
     if pctl['verbose'] or pctl['unicode']:
       try:
-        # try to print the actual unicode line, but, depending on the
-        # version of python and running environment, this may not
-        # work, so except out and print the forced version
+        # Try to print the unicode line, but when this does not work,
+        # except out and print the ASCII version
         self.stdwriter.write("--unicode-- " +  str(list(metrcs.values())) + \
             "  line: " +  str(rowStr.rstrip()) + "\n")
       except UnicodeEncodeError:
@@ -407,16 +416,15 @@ class GeocsvValidator(object):
             + "  input rowStr: " + rowStr
         raise Exception(eStr)
 
+  # octothorp - name for hash symbol
   def report_octothorp(self, pctl, metrcs, rowStr):
     if pctl['octothorp']:
       self.stdwriter.write("--octothorp-- " + str(list(metrcs.values())) + \
           "  line: " + str(rowStr.rstrip()) + "\n")
 
+  # Create an object to hold counts about the input text as the text is
+  # processed.
   def createMetricsObj(self):
-    # capture metrics about content
-    # metrcs - metrics about data content
-    # octothorp - name for hash symbol
-    # gecsv - content related to geocsv header information
     metrcs = collections.OrderedDict()
     metrcs['totalLineCnt'] = 0
     metrcs['linep1ByteCnt'] = 0
@@ -432,6 +440,10 @@ class GeocsvValidator(object):
 
     return metrcs
 
+  # Create gecsv object - an object to contain GeoCSV defined information
+  # found in the header as well as other, undefined keywords. In verbose mode,
+  # this structure is printed out and can be checked for incorrect spelling of
+  # keywords, etc.
   def createGeocsvObj(self, input_resrc, input_bytes):
     gecsv = {'geocsv_start_found': False, 'input_resrc': input_resrc, \
         'delimiter': ',', 'other_keywords': {}}
@@ -553,7 +565,7 @@ class GeocsvValidator(object):
             rstr += "---- no geocsv fields_* keywords detected" + "\n"
       else:
         if itm == 'metrics':
-          # trickery to make OrderedDict look the same between 2.x and 3.x
+          # trickery to make OrderedDict look similar between 2.x and 3.x
           rstr += "-- " + str(itm) + ": " + str(list(report[itm].items())) + "\n"
         else:
           rstr += "-- " + str(itm) + ": " + str(report[itm]) + "\n"
@@ -565,12 +577,20 @@ class GeocsvValidator(object):
       rstr = self.createReportStr(report)
       self.stdwriter.write(rstr)
 
-  # doReport writes to stdout or designated web object, depending
-  # object used to initialize validator,
-  # or no output written pctl['write_report'] is false (intended for unit tests)
+  # doReport writes to stdout or designated web object, depending on
+  # what stdwrite object was used to initialize the GeocsvValidator class.
+  #
+  # This control option, pctl['write_report'], can be set to false to
+  # prevent writing the report output, this is intended for unit tests
+  # presentation.
   def doReport(self, pctl):
+    """
+    Use the **pctl** map to set *control* options for doing validation.
+    """
     self.processingStartTime = datetime.datetime.now(pytz.utc)
 
+    # Check for data to read, get the respective iterator and if successful,
+    # do the validate and write a report.
     if pctl['version']:
       # match other services, not in report form, just a string, no LF or CRLF
       self.version()
@@ -596,6 +616,9 @@ class GeocsvValidator(object):
 
     return report
 
+  # This is where validation pass/fail is determined for a given
+  # dataset. Validity is determine by checking various metrics and
+  # header values against the GeoCSV standard.
   def check_geocsv_fields(self, metrcs, gecsv):
     report = collections.OrderedDict()
     report['GeoCSV_validated'] = True
@@ -691,6 +714,8 @@ class GeocsvValidator(object):
 
     return report
 
+# Helper for command line parsing in argparse to increase flexibility
+# for accepatble values for True and False
 def str2bool(v):
   # from https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
   if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -701,22 +726,40 @@ def str2bool(v):
       raise argparse.ArgumentTypeError('String version of Boolean value' + \
         ' expected, value given: ' + str(v))
 
+# Create a default control structure for a validate run.
 def default_program_control():
   pctl = {}
-##  pctl['input_resrc'] = 'http://geows.ds.iris.edu/geows-uf/wovodat/1/'\
-##      + 'query?format=text&showNumberFormatExceptions=true'
+
+  # A regular URL that returns GeoCSV text data 
   pctl['input_resrc'] = None
-  # note: if both input_resrc and input_bytes are specified, input_resrc will be used
-  pctl['input_bytes'] = None  # of form b'line1\nline2\n'
+
+  # Input raw bytes, # Note: if both input_resrc and input_bytes are
+  # specified, input_resrc will be used
+  pctl['input_bytes'] = None  # i.e. of form b'line1\nline2\n'
 
   pctl['verbose'] = False
-  pctl['octothorp'] = False  # show lines with # and respective metrics
-  pctl['unicode'] = False  # show lines where unicode is detected and respective metrics
-  pctl['null_fields'] = False  # show lines if any field is null and respective metrics
-  pctl['field_type'] = False # when GeoCSV field_type header line is present, check respective fields for integer, float, datetime
-  pctl['write_report'] = True  # report is not written when False (i.e. keeps unit test report small)
-  pctl['stdin'] = False # set True to read from stdin
-  pctl['version'] = False # set True to print version and return immediately
+
+  # Show lines that start with #
+  pctl['octothorp'] = False
+
+  # Show lines where unicode is detected
+  pctl['unicode'] = False
+
+  # Show lines if any field is null
+  pctl['null_fields'] = False
+
+  # When GeoCSV field_type header line is present, check fields for
+  # types integer, float, or datetime, respectively.
+  pctl['field_type'] = False
+
+  # Report is not written when False (i.e. keeps unit test report small).
+  pctl['write_report'] = True
+
+  # Set True to read from stdin.
+  pctl['stdin'] = False
+
+  # Set True to print the version of this handler and return immediately.
+  pctl['version'] = False
 
   return pctl
 
