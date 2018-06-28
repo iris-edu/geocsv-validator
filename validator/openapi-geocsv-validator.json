@@ -1,0 +1,261 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "GeoCSV Validator",
+        "description": "A REST like service to validate GeoCSV content.",
+        "termsOfService": "TBD",
+        "contact": {
+            "name": "GeoWS Building Block",
+            "email": "geows@iris.washington.edu"
+        },
+        "license": {
+            "name": "Data provided under GNU Lesser General Public License",
+            "url": "http://www.gnu.org/licenses/"
+        }
+    },
+    "paths": {
+        "/geocsv/1/validate": {
+            "get": {
+                "tags": [
+                    "GeoCSV"
+                ],
+                "summary": "Get validate results from query against an input URL",
+                "description": "<p>The <strong>validate</strong> service provides a report from the validation operation.<p>TBD <a href='http://tbd.line/xyz'>See TBD</a></p>",
+                "operationId": "getValidate",
+                "responses": {
+                    "200": {
+                        "description": "Successful",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request, and error messages releated to client interaction with service",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "406": {
+                        "description": "Not Acceptable",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error, and error messages related to handler operation or geocsvTornadoService configuration",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "head": {
+                "tags": [
+                    "GeoCSV"
+                ],
+                "summary": "Get validate results from query against an input URL",
+                "description": "<p>The <strong>geocsv validate</strong> service provides a report from the validation operation.<p>This web service complements the web application at <a href='http://www.wovodat.org/precursor/index_unrest_devel_v6.php'>See your volcano</a></p>",
+                "operationId": "headValidate",
+                "responses": {
+                    "200": {
+                        "description": "Successful"
+                    },
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request, and error messages releated to client interaction with geocsvTornadoService",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "406": {
+                        "description": "Not Acceptable",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error, and error messages related to handler operation or geocsvTornadoService configuration",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "input_resrc",
+                    "in": "query",
+                    "description": "Input a URL or filename, Note: for URLs, & must be replaced with %26, e.g. http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv or https://service.iris.edu/ph5ws/station/1/query?level=network&format=geocsv&nodata=404 or http://service.iris.edu/fdsnws/station/1/query?net=IU,M*&cha=BHZ&level=network&format=geocsv&includecomments=true&nodata=404",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "verbose",
+                    "in": "query",
+                    "description": "Show metrics for every data line",
+                    "required": false,
+                    "schema": {
+                        "type": "boolean"
+                    }
+                },
+                {
+                    "name": "octothorp",
+                    "in": "query",
+                    "description": "Show metrics for lines with # after initial start of data lines",
+                    "required": false,
+                    "schema": {
+                        "type": "boolean"
+                    }
+                },
+                {
+                    "name": "unicode",
+                    "in": "query",
+                    "description": "Show metrics for lines with unicode",
+                    "required": false,
+                    "schema": {
+                        "type": "boolean"
+                    }
+                },
+                {
+                    "name": "null_fields",
+                    "in": "query",
+                    "description": "Show metrics for lines if any field is null",
+                    "required": false,
+                    "schema": {
+                        "type": "boolean"
+                    }
+                },
+                {
+                    "name": "field_type",
+                    "in": "query",
+                    "description": "Show metrics for lines if any field does not match its respective field_type, i.e. integer, float, or datetime",
+                    "required": false,
+                    "schema": {
+                        "type": "boolean"
+                    }
+                }
+            ]
+        },
+        "/geocsv/1/version": {
+            "get": {
+                "tags": [
+                    "GeoCSV"
+                ],
+                "summary": "Get version of service",
+                "description": "<p>The <strong>version</strong> service provides the version number of this service)",
+                "operationId": "getVersion",
+                "responses": {
+                    "200": {
+                        "description": "Successful",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "406": {
+                        "description": "Not Acceptable - look at Accept headers, geocsvTornadoService only returns text/plain here",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "http://geows.ds.iris.edu/geows"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "api_key": {
+                "type": "apiKey",
+                "name": "api_key",
+                "in": "header"
+            },
+            "TBD_auth": {
+                "type": "oauth2",
+                "flows": {
+                    "implicit": {
+                        "authorizationUrl": "http://TBD/api/oauth/dialog",
+                        "scopes": {}
+                    }
+                }
+            }
+        }
+    }
+}
