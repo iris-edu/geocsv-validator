@@ -3,7 +3,27 @@
     "info": {
         "version": "1.0.0",
         "title": "GeoCSV Validator",
-        "description": "A REST like service to validate GeoCSV content.",
+        "description":"
+A REST like service to validate GeoCSV content.
+
+
+GeocsvValidator will read content from the resource specified with the
+    **input_resrc** parameter.
+A short report shows validation results and counts of
+ properties like null fields, type mismatch, line count, etc.
+
+
+This validator does not count null fields as a failure. However, to identify
+lines with null_fields, set
+parameter **null_fields**  to true to report lines with null fields.
+
+
+The csv.reader module used in this code behaves differently
+between python 2 and 3 on UNICODE characters. For consistent behavior, UNICODE
+characters are treated like ASCII. To see lines which contain of UNICODE
+characters, use and the **unicode** parameter.
+
+",
         "termsOfService": "TBD",
         "contact": {
             "name": "GeoWS Building Block",
@@ -139,7 +159,21 @@
                 {
                     "name": "input_resrc",
                     "in": "query",
-                    "description": "Input a URL or filename, Note: for URLs, & must be replaced with %26, e.g. http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv or https://service.iris.edu/ph5ws/station/1/query?level=network&format=geocsv&nodata=404 or http://service.iris.edu/fdsnws/station/1/query?net=IU,M*&cha=BHZ&level=network&format=geocsv&includecomments=true&nodata=404",
+                    "description": "
+A URL or filename - sample URLs:
+
+
+http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv
+
+
+https://service.iris.edu/ph5ws/station/1/query?level=network&format=geocsv&nodata=404
+
+
+http://service.iris.edu/fdsnws/station/1/query?net=IU,M*&cha=BHZ&level=network&format=geocsv&includecomments=true&nodata=404
+
+
+**Note:** when entering parameter **input_resrc** in the browser, **replace \"&\" characters with %26**
+",
                     "required": true,
                     "schema": {
                         "type": "string"
@@ -148,7 +182,7 @@
                 {
                     "name": "verbose",
                     "in": "query",
-                    "description": "Show metrics for every data line",
+                    "description": "Show every line",
                     "required": false,
                     "schema": {
                         "type": "boolean"
@@ -157,7 +191,7 @@
                 {
                     "name": "octothorp",
                     "in": "query",
-                    "description": "Show metrics for lines with # after initial start of data lines",
+                    "description": "Show lines which have # as first character",
                     "required": false,
                     "schema": {
                         "type": "boolean"
@@ -166,7 +200,7 @@
                 {
                     "name": "unicode",
                     "in": "query",
-                    "description": "Show metrics for lines with unicode",
+                    "description": "Show lines which contain UNICODE characters",
                     "required": false,
                     "schema": {
                         "type": "boolean"
@@ -175,7 +209,7 @@
                 {
                     "name": "null_fields",
                     "in": "query",
-                    "description": "Show metrics for lines if any field is null",
+                    "description": "Show lines where any field is null",
                     "required": false,
                     "schema": {
                         "type": "boolean"
@@ -184,7 +218,7 @@
                 {
                     "name": "field_type",
                     "in": "query",
-                    "description": "Show metrics for lines if any field does not match its respective field_type, i.e. integer, float, or datetime",
+                    "description": "Show lines where any field does not match its respective **field_type** header value, i.e. for types integer, float, or datetime",
                     "required": false,
                     "schema": {
                         "type": "boolean"

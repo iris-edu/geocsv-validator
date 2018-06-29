@@ -15,14 +15,21 @@ A command line tool for validating GeoCSV content. There is also a prototype ser
   - reset size limit to 400 MB, 4 times current channel metadata size
   - add reading from stdin when --STDIN parameter present
   - small changes to report messages
+- 2018-06-29
+  - add OpenAPI 3 spec
 
-## Concept of operation:
 
-GeocsvValidator.py will read content from the resource specified with --input_resrc. By default, a short report is output showing whether the input is validated or not. Additionally, counts of other properties like null fields, type mismatch, etc. are provided in a "metrics" line.
+GeocsvValidator.py reads content from the resource specified with parameter
+**input_resrc**. A short report shows validation results. Additionally, counts
+of other properties like null fields, type mismatch, etc. are provided.
 
-This validator does not count null fields as a failure-to-validate as this may be allowed for a given dataset. However, if it is desired to identify lines with null_fields, setting option --null_fields to true will cause those lines to be output.
+This validator does not count null fields as a failure. However, to identify lines
+with null_fields, set parameter **null_fields** to true to report lines with null fields.
 
-The option to show UNICODE is a side affect of creating this program to run on both python 2 and 3. The module csv.reader is used to input lines of data and this module behaves differently in respective python versions. For consistent operation, this validator will force input characters to ASCII if csv.reader has an exception processing UNICODE characters.
+The csv.reader module used in this code behaves differently
+between python 2 and 3 on UNICODE characters. For consistent behavior, UNICODE
+characters are treated like ASCII. To see lines which contain of UNICODE
+characters, use and the **unicode** parameter.
 
 ##  Contents by folder
 
