@@ -25,7 +25,7 @@ import collections
 import io
 import dateutil.parser
 
-GEOCSV_CURRENT_VERSION = '0.94'
+GEOCSV_CURRENT_VERSION = '0.9.5'
 
 MY_LINE_BREAK_CHARS = '\n\r'
 
@@ -123,13 +123,17 @@ class GeocsvValidator(object):
   def get_no_input_specified(self, pctl):
     result_for_get = {'data_iter': None, 'except_report': None}
 
-    metrcs = self.createMetricsObj()
-    gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
-    report = self.check_geocsv_fields(metrcs, gecsv)
+    report = self.createNewReport(pctl)
     report['ERROR_no_input_specified'] = \
         'No data input option was selected'
     result_for_get['except_report'] = report
     return result_for_get
+
+  def createNewReport(self, pctl):
+    metrcs = self.createMetricsObj()
+    gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
+    report = self.check_geocsv_fields(metrcs, gecsv)
+    return report
 
   def get_stdin_iterator(self, pctl):
     result_for_get = {'data_iter': None, 'except_report': None}
@@ -146,9 +150,7 @@ class GeocsvValidator(object):
         # to be bytes for further processing
         pctl['next_data_function'] = self.nextBytesFromString
     except Exception as e:
-      metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
-      report = self.check_geocsv_fields(metrcs, gecsv)
+      report = self.createNewReport(pctl)
       report['ERROR_Exception'] = "Failed stdin iterator create: " + str(e)
       result_for_get['except_report'] = report
       return result_for_get
@@ -161,9 +163,7 @@ class GeocsvValidator(object):
   def get_resrc_iterator(self, pctl):
     result_for_get = {'data_iter': None, 'except_report': None}
     if pctl['input_resrc'] == None:
-      metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
-      report = self.check_geocsv_fields(metrcs, gecsv)
+      report = self.createNewReport(pctl)
       report['ERROR_get_resrc_iterator_None'] = \
           'None was entered for control parameter: input_resrc'
       result_for_get['except_report'] = report
@@ -176,9 +176,7 @@ class GeocsvValidator(object):
       result_for_get['data_iter'] = response.readlines().__iter__()
       pctl['next_data_function'] = self.nextBytesFromBytes
     except HTTPError as e:
-      metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
-      report = self.check_geocsv_fields(metrcs, gecsv)
+      report = self.createNewReport(pctl)
       report['HTTPError_HTTPcode'] = str(e.code)
       report['HTTPError_Exception'] = str(e)
       result_for_get['except_report'] = report
@@ -190,11 +188,13 @@ class GeocsvValidator(object):
         result_for_get['data_iter'] = file.readlines().__iter__()
         pctl['next_data_function'] = self.nextBytesFromBytes
       except Exception as e2:
-        metrcs = self.createMetricsObj()
-        gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
-        report = self.check_geocsv_fields(metrcs, gecsv)
-        report['ERROR_Exception'] = "Failed URL read: " + str(e) + \
-            "  and file read: " + str(e2)
+        report = self.createNewReport(pctl)
+        # from exception e
+        report['WARNING_urlopen_Exception'] = "GeocsvValidator failed to open" +\
+          " input_resrc as a URL trying as a file."
+        # from exception e2
+        report['ERROR_open_Exception'] = "GeocsvValidator failed to open" +\
+          " input_resrc as a file."
         result_for_get['except_report'] = report
         return result_for_get
 
@@ -206,9 +206,7 @@ class GeocsvValidator(object):
   def get_bytes_iterator(self, pctl):
     result_for_get = {'data_iter': None, 'except_report': None}
     if pctl['input_bytes'] == None:
-      metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
-      report = self.check_geocsv_fields(metrcs, gecsv)
+      report = self.createNewReport(pctl)
       report['ERROR_get_bytes_iterator_None'] = \
           'None was entered for control parameter: input_bytes'
       result_for_get['except_report'] = report
@@ -222,9 +220,7 @@ class GeocsvValidator(object):
       result_for_get['data_iter'] = bytes_obj.readlines().__iter__()
       pctl['next_data_function'] = self.nextBytesFromBytes
     except Exception as e:
-      metrcs = self.createMetricsObj()
-      gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
-      report = self.check_geocsv_fields(metrcs, gecsv)
+      report = self.createNewReport(pctl)
       report['ERROR_Exception'] = str(e)
       result_for_get['except_report'] = report
       return result_for_get
@@ -608,7 +604,7 @@ class GeocsvValidator(object):
       result_for_get = self.get_no_input_specified(pctl)
 
     if result_for_get['except_report'] == None:
-      # no error report, continue
+      # no error report, continue with validation
       data_iter = result_for_get['data_iter']
       report = self.validate(pctl, data_iter)
     else:
