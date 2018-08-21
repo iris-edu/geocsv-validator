@@ -51,7 +51,7 @@ class GeoCSVTests(unittest.TestCase):
 
     geocsvObj = validator.GeocsvValidator.GeocsvValidator(sys.stdout)
     report = geocsvObj.doReport(pctl)
-    if report['GeoCSV_validated'] == expected_outcome:
+    if report['data_isValidated'] == expected_outcome:
       pass
     else:
       self.fail(report)

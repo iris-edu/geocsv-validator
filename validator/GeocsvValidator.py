@@ -550,11 +550,9 @@ class GeocsvValidator(object):
 
   def createReportStr(self, report):
     processing_seconds = datetime.datetime.now(pytz.utc) - self.processingStartTime
-    rstr = "-- GeoCSV_Validate_Report  datetime: " + \
-        str(datetime.datetime.now(pytz.utc).isoformat()) + \
-        "  processing_seconds: " + str(processing_seconds.total_seconds()) + \
-        "  version: " + GEOCSV_CURRENT_VERSION + "\n"
+    rstr = ""
     for itm in report:
+      # for any report item that is a dict, indent do this formatting
       if isinstance(report[itm], dict) and itm == 'ERROR_between_these_geocsv_fields':
         rstr += "-- " + str(itm) + ": " + "\n"
         if len(report[itm]) > 0:
@@ -563,9 +561,30 @@ class GeocsvValidator(object):
         else:
             rstr += "---- no geocsv fields_* keywords detected" + "\n"
       else:
-        if itm == 'metrics':
-          # trickery to make OrderedDict look similar between 2.x and 3.x
-          rstr += "-- " + str(itm) + ": " + str(list(report[itm].items())) + "\n"
+        # any item selected here by name is expected to be a well-known name created
+        # elsewhere in the code
+        if itm == 'GeoCSV_validate_metrics':
+          rstr += "-- " + str(itm) + ": " + oderedItemsToList(report[itm]) + "\n"
+        elif itm == 'data_isValidated':
+          # expecting data_isValidated to be the first line of the report since
+          # the report should be ordered
+
+          odinfo = collections.OrderedDict()
+          odinfo[str(itm)] = report[itm]
+          odinfo['end_datetime'] = datetime.datetime.now(pytz.utc).isoformat()
+          odinfo['processing_seconds'] = processing_seconds.total_seconds()
+          odinfo['version'] = GEOCSV_CURRENT_VERSION
+          rstr += "-- " + "GeoCSV_validate_result: " + oderedItemsToList(odinfo) + "\n"
+        elif itm == 'input_bytes_len':
+          # TBD - no report output for now, this only applies if this class
+          #       is implemented within Tornado or other python environment
+          #       does not apply for WebServiceShell
+          pass
+        elif itm == 'input_resrc':
+          # change style like other overview result
+          odinfo = collections.OrderedDict()
+          odinfo[str(itm)] = report[itm]
+          rstr += "-- " + "GeoCSV_validate_input: " + oderedItemsToList(odinfo) + "\n"
         else:
           rstr += "-- " + str(itm) + ": " + str(report[itm]) + "\n"
     return rstr
@@ -620,14 +639,14 @@ class GeocsvValidator(object):
   # header values against the GeoCSV standard.
   def check_geocsv_fields(self, metrcs, gecsv):
     report = collections.OrderedDict()
-    report['GeoCSV_validated'] = True
+    report['data_isValidated'] = True
     report['input_resrc'] = gecsv['input_resrc']
     report['input_bytes_len'] = gecsv['input_bytes_len']
-    report['metrics'] = metrcs
+    report['GeoCSV_validate_metrics'] = metrcs
 
     # check for start
     if (not gecsv['geocsv_start_found']):
-      report['GeoCSV_validated'] = False
+      report['data_isValidated'] = False
       report['WARNING_no_geocsv_start'] = 'No GeoCSV start-of-header found,' + \
           ' expecting this line: ' + str(GEOCSV_REQUIRED_START_LITERAL)
 
@@ -645,20 +664,20 @@ class GeocsvValidator(object):
         gecsvFieldCntSet.add(len(row))
 
     if len(gecsvFieldCntSet) > 1:
-      report['GeoCSV_validated'] = False
+      report['data_isValidated'] = False
       report['ERROR_geocsv_field_size'] = 'Inconsistent geocsv field sizes'
       showGeoCSVFldsDict = True
 
     # check for consistent data field values
     if len(metrcs['dataFieldsCntSet']) > 1:
-      report['GeoCSV_validated'] = False
+      report['data_isValidated'] = False
       report['ERROR_data_field_size'] = 'There is more than one size for data ' + \
           'rows, row sizes: ' + str(metrcs['dataFieldsCntSet'])
 
     # check for consistent field sizes between data and geocsv field parameters
     if len(metrcs['dataFieldsCntSet'].union(gecsvFieldCntSet)) >\
             max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
-      report['GeoCSV_validated'] = False
+      report['data_isValidated'] = False
       report['ERROR_ geocsv_to_data_field_size'] = 'A row size is inconsistent' + \
           ' with geocsv field size, data row sizes: ' + str(metrcs['dataFieldsCntSet']) + \
           '  geocsv field sizes: ' + str(gecsvFieldCntSet)
@@ -666,42 +685,42 @@ class GeocsvValidator(object):
 
     # check for field size of one, which may imply a missing delimiter keyword
     # Note: this check must follow the ERROR_ geocsv_to_data_field_size check
-    if report['GeoCSV_validated']:
+    if report['data_isValidated']:
       # only check if data field and keyword fields are consistent
       if 1 in metrcs['dataFieldsCntSet'] and len(metrcs['dataFieldsCntSet']) == 1 \
          and 1 in gecsvFieldCntSet and len(gecsvFieldCntSet) == 1:
-        # note: not set#report['GeoCSV_validated'] = False
+        # note: not set#report['data_isValidated'] = False
         report['INFO_all_fields_sizes_are_1'] = 'This may be correct, or the delimiter ' + \
             'keyword may be missing.'
 
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
-      # note: not set#report['GeoCSV_validated'] = False
+      # note: not set#report['data_isValidated'] = False
       report['INFO_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
 
     if metrcs['unknownFieldTypeCnt'] > 0:
-      report['GeoCSV_validated'] = False
+      report['data_isValidated'] = False
       report['ERROR_unknown_field_type'] = 'There are one or more unknown field types ' + \
           'in the field_type keyword, count: ' + str(metrcs['unknownFieldTypeCnt']) + \
           '  field_type: ' + gecsv['field_type']
 
     # check for unexpected field data type
     if metrcs['dataTypeErrorCnt'] > 0:
-      report['GeoCSV_validated'] = False
+      report['data_isValidated'] = False
       report['ERROR_in_data_type'] = 'At least one data value ' + \
           'did not convert to the type specified in keyword: ' + GEOCSV_FIELD_TYPE + \
           ',  count: ' + str(metrcs['dataTypeErrorCnt'])
 
     # check for unicode in field values
     if metrcs['unicodeLineCnt'] > 0:
-      # note: not set#report['GeoCSV_validated'] = False
+      # note: not set#report['data_isValidated'] = False
       report['INFO_unicode_in_field'] = 'At least one line has a data field ' + \
           'with a UNICODE character, count: ' + str(metrcs['unicodeLineCnt'])
 
     # check for null data field values
     if metrcs['linep1ByteCnt'] > GEOCSV_RUNAWAY_LIMIT:
-      report['GeoCSV_validated'] = False
+      report['data_isValidated'] = False
       report['WARNING_runaway_byte_limit_exceded'] = 'The byte count of ' + \
           'incoming data on each line plus 1 byte counted for each line, ' + \
           'exceded: ' + str(GEOCSV_RUNAWAY_LIMIT)
@@ -713,6 +732,11 @@ class GeocsvValidator(object):
 
     return report
 
+# trickery to make OrderedDict look similar between 2.x and 3.x
+# input should be OrderedDict
+def oderedItemsToList(od):
+  rstr =  str(list(od.items()))
+  return rstr
 
 # Helper for command line parsing in argparse to increase flexibility
 # for accepatble values for True and False
