@@ -177,8 +177,7 @@ class GeocsvValidator(object):
       pctl['next_data_function'] = self.nextBytesFromBytes
     except HTTPError as e:
       report = self.createNewReport(pctl)
-      report['HTTPError_HTTPcode'] = str(e.code)
-      report['HTTPError_Exception'] = str(e)
+      report['HTTPError_from_input_resrc_urlopen_exception'] = str(e)
       result_for_get['except_report'] = report
       return result_for_get
     except Exception as e:
@@ -191,7 +190,7 @@ class GeocsvValidator(object):
         report = self.createNewReport(pctl)
         # from exception e
         report['WARNING_urlopen_Exception'] = "GeocsvValidator failed to open" +\
-          " input_resrc as a URL trying as a file."
+          " input_resrc as a URL, now trying as a file."
         # from exception e2
         report['ERROR_open_Exception'] = "GeocsvValidator failed to open" +\
           " input_resrc as a file."
@@ -647,8 +646,8 @@ class GeocsvValidator(object):
     # check for start
     if (not gecsv['geocsv_start_found']):
       report['data_isValidated'] = False
-      report['WARNING_no_geocsv_start'] = 'No GeoCSV start-of-header found,' + \
-          ' expecting this line: ' + str(GEOCSV_REQUIRED_START_LITERAL)
+      report['WARNING_no_geocsv_start'] = 'No start-of-dataset found,' + \
+          ' expecting this line first: \n' + str(GEOCSV_REQUIRED_START_LITERAL)
 
     # check for consistent geocsv field parameter values
     thisFldDict = collections.OrderedDict()
