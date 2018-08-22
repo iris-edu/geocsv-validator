@@ -174,8 +174,7 @@ def run_test_suites(argv_list):
   global g_argv_list
   g_argv_list = argv_list
 
-  print("**** ----------------------------------------------")
-  print ("**** run_test_suites, context: ", __name__)
+  print ("**** ---------- run_test_suites, context: ", __name__)
 
   suite = unittest.TestSuite()
   suite.addTest(GeoCSVTests("testm4"))
@@ -212,8 +211,7 @@ def run_one_test(argv_list, test_name):
   global g_argv_list
   g_argv_list = argv_list
 
-  print("**** ----------------------------------------------")
-  print("**** run_one_test, context: ", __name__, "  test_name: ", test_name)
+  print("**** ---------- run_one_test, context: ", __name__, "  test_name: ", test_name)
 
   runner = unittest.TextTestRunner()
   runner.run(GeoCSVTests(test_name))

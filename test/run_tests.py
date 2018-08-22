@@ -11,19 +11,12 @@ import sys
 import handler_tests
 import re
 
-print("** ------------------------------------------------")
-print("** Run unit tests")
-print("**")
-print("** to run indiviudal tests, put doTests followed by one or more test method names")
-print("** e.g. ./run_tests.py doTests test06 test17")
-print("**")
-print("** to get run report, set write_report in pctl in handler_tests.py to true")
-print("**")
-print("** start tests, context: " + __name__ + "  argv: ", sys.argv)
-
-print("** ------------------------------------------------")
-print("** python environment:")
-print(sys.version)
+print("** -------- Run all unit tests, context: " + __name__ )
+print("** -------- - to run indiviudal tests, use parameter 'doTests' followed by one or more test names")
+print("** --------   e.g. ./run_tests.py doTests test06 test17")
+print("** -------- - to write report, set 'write_report' in pctl in handler_tests.py to True")
+print("** -------- start tests, argv: ", sys.argv)
+print("** -------- python environment: ", sys.version.replace('\n',' '))
 
 # quick and dirty for one or a few test:
 #   check for arg 'doTests'
@@ -40,13 +33,11 @@ if 'doTests' in sys.argv:
       if item == 'doTests' or item == sys.argv[0]:
         pass
       else:
-        print("** ------------------------------------------------")
-        print("** WARNING - unknown test name: ", item)
+        print("** -------- WARNING - unknown test name: ", item)
     else:
       test_name = mObj.group(0) # i.e. same as item
       handler_tests.run_one_test(sys.argv, test_name)
 else:
   handler_tests.run_test_suites(sys.argv)
 
-print("** ------------------------------------------------")
-print("** end tests, context: " + __name__)
+print("** -------- end tests, context: " + __name__)
