@@ -192,9 +192,13 @@ class GeocsvValidator(object):
         # from exception e
         report['WARNING_exception_opening_input_resrc_as_URL'] = "" +\
           " now opening as a local file."
+        self.report_verbose(pctl,
+          "------- GeoCSV_Validate - urlopen ex: " + str(e))
         # from exception e2
         report['ERROR_opening_input_resrc'] = "failed to open" +\
           " input_resrc as a file."
+        self.report_verbose(pctl,
+          "------- GeoCSV_Validate - open ex: " + str(e2))
         result_for_get['except_report'] = report
         return result_for_get
 
@@ -290,7 +294,7 @@ class GeocsvValidator(object):
           if keyword in GEOCSV_WELL_KNOWN_KEYWORDS:
             gecsv[keyword] = value
           else:
-            gecsv['other_keywords'][keyword] = value
+            gecsv['not_geocsv_keywords'][keyword] = value
 
         # keep reading as long as octothorp found
         rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
@@ -445,7 +449,7 @@ class GeocsvValidator(object):
   # keywords, etc.
   def createGeocsvObj(self, input_resrc, input_bytes):
     gecsv = {'geocsv_start_found': False, 'input_resrc': input_resrc,
-        'delimiter': ',', 'other_keywords': {}}
+        'delimiter': ',', 'not_geocsv_keywords': {}}
     # don't put the raw bytes in this structure
     if input_bytes is None:
       gecsv['input_bytes_len'] = None
@@ -453,18 +457,31 @@ class GeocsvValidator(object):
       gecsv['input_bytes_len'] = len(input_bytes)
     return gecsv
 
+  def report_gecsv(self, dobj):
+    rstr = ""
+    for itm in dobj:
+      # for any item that is a dict, indent
+      if isinstance(dobj[itm], dict):
+        rstr += "\nhdr-- " + str(itm) + ": "
+        if len(dobj[itm]) > 0:
+          for it2 in dobj[itm]:
+            rstr += "\nhdr---- " + str(it2) + ": " + str(dobj[itm][it2])
+        else:
+            rstr += "None"
+      else:
+        rstr += "\nhdr-- " + str(itm) + ": " + str(dobj[itm])
+    return rstr
+
   def processGeocsvHeader(self, data_iter, gecsv, metrcs, pctl):
     gecsv['geocsv_start_found'] = True
     metrcs['geocsvHdrLineCnt'] = metrcs['geocsvHdrLineCnt'] + 1
     # read expected geocsv lines until a non-octothorp line is read
     rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
 
-    self.report_verbose(pctl,
-        "------- GeoCSV_Validate - parsed header and status parameters: " +
-        str(gecsv))
-    self.report_verbose(pctl,
-        "------- GeoCSV_Validate - after header read metrics: " +
-          str(list(metrcs.values())))
+    self.report_verbose(pctl, "------- GeoCSV_Validate - header_parameters: " +
+        self.report_gecsv(gecsv))
+    self.report_verbose(pctl, "------- GeoCSV_Validate - after_header metrics: " +
+        str(list(metrcs.values())))
 
     # handle first non-geocsv line after finished reading geocsv header lines
     # This should be the one and only CSV header line
@@ -563,9 +580,9 @@ class GeocsvValidator(object):
       else:
         # any item selected here by name is expected to be a well-known name created
         # elsewhere in the code
-        if itm == 'GeoCSV_validate_metrics':
+        if itm == 'GeoCSV_Validate_metrics':
           rstr += "-- " + str(itm) + ": " + oderedItemsToList(report[itm]) + "\n"
-        elif itm == 'data_isValidated':
+        elif itm == 'dataset_isValidated':
           # expecting data_isValidated to be the first line of the report since
           # the report should be ordered
 
@@ -574,7 +591,7 @@ class GeocsvValidator(object):
           odinfo['end_datetime'] = datetime.datetime.now(pytz.utc).isoformat()
           odinfo['processing_seconds'] = processing_seconds.total_seconds()
           odinfo['version'] = GEOCSV_CURRENT_VERSION
-          rstr += "-- " + "GeoCSV_validate_result: " + oderedItemsToList(odinfo) + "\n"
+          rstr += "-- " + "GeoCSV_Validate_result: " + oderedItemsToList(odinfo) + "\n"
         elif itm == 'input_bytes_len':
           # TBD - no report output for now, this only applies if this class
           #       is implemented within Tornado or other python environment
@@ -584,7 +601,7 @@ class GeocsvValidator(object):
           # change style like other overview result
           odinfo = collections.OrderedDict()
           odinfo[str(itm)] = report[itm]
-          rstr += "-- " + "GeoCSV_validate_input: " + oderedItemsToList(odinfo) + "\n"
+          rstr += "-- " + "GeoCSV_Validate_input: " + oderedItemsToList(odinfo) + "\n"
         else:
           rstr += "-- " + str(itm) + ": " + str(report[itm]) + "\n"
     return rstr
@@ -642,7 +659,7 @@ class GeocsvValidator(object):
     report['data_isValidated'] = True
     report['input_resrc'] = gecsv['input_resrc']
     report['input_bytes_len'] = gecsv['input_bytes_len']
-    report['GeoCSV_validate_metrics'] = metrcs
+    report['GeoCSV_Validate_metrics'] = metrcs
 
     # check for start
     if (not gecsv['geocsv_start_found']):
