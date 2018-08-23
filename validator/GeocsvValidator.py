@@ -55,6 +55,9 @@ GEOCSV_WELL_KNOWN_FIELD_TYPE = {'string', 'integer', 'float', 'datetime'}
 # e.g. 96867459 * 4 = 387469836 ~ 400 MB
 GEOCSV_RUNAWAY_LIMIT = 1024 * 1024 * 400
 
+GEOCSV_VB1 = '--verbose-- '
+GEOCSV_VB2 = '--verbose-- '
+GEOCSV_VB3 = '--verbose-- '
 
 class GeocsvValidator(object):
   """
@@ -131,7 +134,7 @@ class GeocsvValidator(object):
 
   def createErrorReport(self, pctl):
     report = collections.OrderedDict()
-    report['data_isValidated'] = False
+    report['dataset_isValidated'] = False
     report['input_resrc'] = pctl['input_resrc']
     report['input_bytes_len'] = None
     return report
@@ -140,8 +143,7 @@ class GeocsvValidator(object):
     result_for_get = {'data_iter': None, 'except_report': None}
 
     try:
-      self.report_verbose(pctl,
-          "------- GeoCSV_Validate - getting stdin iterator")
+      self.report_verbose(pctl, GEOCSV_VB1, "getting stdin iterator")
       result_for_get['data_iter'] = sys.stdin.readlines().__iter__()
       if sys.version_info[0] < 3:
         # python 2 str is treated as bytes
@@ -156,8 +158,7 @@ class GeocsvValidator(object):
       result_for_get['except_report'] = report
       return result_for_get
 
-    self.report_verbose(pctl,
-        "------- GeoCSV_Validate - created stdin iterator,  " +
+    self.report_verbose(pctl, GEOCSV_VB1, "created stdin iterator,  " +
         "datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
@@ -171,8 +172,8 @@ class GeocsvValidator(object):
       return result_for_get
 
     try:
-      self.report_verbose(pctl,
-          "------- GeoCSV_Validate - opening input_resrc: " + pctl['input_resrc'])
+      self.report_verbose(pctl, GEOCSV_VB1, "opening input_resrc: " +\
+          pctl['input_resrc'])
       response = urlopen(pctl['input_resrc'])
       result_for_get['data_iter'] = response.readlines().__iter__()
       pctl['next_data_function'] = self.nextBytesFromBytes
@@ -192,18 +193,15 @@ class GeocsvValidator(object):
         # from exception e
         report['WARNING_exception_opening_input_resrc_as_URL'] = "" +\
           " now opening as a local file."
-        self.report_verbose(pctl,
-          "------- GeoCSV_Validate - urlopen ex: " + str(e))
+        self.report_verbose(pctl, GEOCSV_VB1, "urlopen ex: " + str(e))
         # from exception e2
         report['ERROR_opening_input_resrc'] = "failed to open" +\
           " input_resrc as a file."
-        self.report_verbose(pctl,
-          "------- GeoCSV_Validate - open ex: " + str(e2))
+        self.report_verbose(pctl, GEOCSV_VB1, "open ex: " + str(e2))
         result_for_get['except_report'] = report
         return result_for_get
 
-    self.report_verbose(pctl,
-        "------- GeoCSV_Validate - resource found, created data iterator,  " +
+    self.report_verbose(pctl, GEOCSV_VB1, "resource found, created data iterator,  " +
         "datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
@@ -217,8 +215,7 @@ class GeocsvValidator(object):
       return result_for_get
 
     try:
-      self.report_verbose(pctl,
-          "------- GeoCSV_Validate - setup input_bytes len: " +
+      self.report_verbose(pctl, GEOCSV_VB1, "setup input_bytes len: " +
           str(len(pctl['input_bytes'])))
       bytes_obj = io.BytesIO(pctl['input_bytes'])
       result_for_get['data_iter'] = bytes_obj.readlines().__iter__()
@@ -229,8 +226,7 @@ class GeocsvValidator(object):
       result_for_get['except_report'] = report
       return result_for_get
 
-    self.report_verbose(pctl,
-        "------- GeoCSV_Validate - read bytes iterator created,  datetime: " +
+    self.report_verbose(pctl, GEOCSV_VB1, "read bytes iterator created,  datetime: " +
         str(datetime.datetime.now(pytz.utc).isoformat()))
     return result_for_get
 
@@ -325,7 +321,7 @@ class GeocsvValidator(object):
               self.field_type_test_functions.append(self.try_field_type_noop)
             else:
               metrcs['unknownFieldTypeCnt'] += 1
-              self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) +
+              self.report_verbose(pctl, GEOCSV_VB2, str(list(metrcs.values())) +
                   " line:" + str(row))
               self.field_type_test_functions.append(self.try_field_type_noop)
     except StopIteration:
@@ -401,7 +397,7 @@ class GeocsvValidator(object):
       #       row so that when looking at verbose listing, the occurrence of a
       #       counter change is on the same line it occurred, not one before
       #       or one after
-      self.report_verbose(pctl, "--verbose-- " + str(list(metrcs.values())) +
+      self.report_verbose(pctl, GEOCSV_VB2, str(list(metrcs.values())) +
           " line:" + str(row))
 
       if anyNulls and pctl['null_fields']:
@@ -478,35 +474,34 @@ class GeocsvValidator(object):
     # read expected geocsv lines until a non-octothorp line is read
     rowStr = self.read_geocsv_lines(data_iter, gecsv, metrcs, pctl)
 
-    self.report_verbose(pctl, "------- GeoCSV_Validate - header_parameters: " +
+    self.report_verbose(pctl, GEOCSV_VB1, "header_parameters: " +
         self.report_gecsv(gecsv))
-    self.report_verbose(pctl, "------- GeoCSV_Validate - after_header metrics: " +
+    self.report_verbose(pctl, GEOCSV_VB1, "after_header metrics: " +
         str(list(metrcs.values())))
 
     # handle first non-geocsv line after finished reading geocsv header lines
     # This should be the one and only CSV header line
     self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl, True)
 
-  def report_any(self, pctl, str1):
+  def report_any(self, pctl, strpre, strmsg):
     if pctl['verbose'] or pctl['octothorp'] or pctl['unicode'] or pctl['null_fields']:
-      self.stdwriter.write(str1 + "\n")
+      self.stdwriter.write(strpre + strmsg + "\n")
 
-  def report_verbose(self, pctl, str1):
+  def report_verbose(self, pctl, strpre, strmsg):
     if pctl['verbose']:
-      self.stdwriter.write(str1 + "\n")
+      self.stdwriter.write(strpre + strmsg + "\n")
 
   def validate(self, pctl, data_iter):
     metrcs = self.createMetricsObj()
 
-    self.report_any(pctl, "\n" +
-      "------- GeoCSV_Validate - starting validate  datetime: " +
+    self.report_any(pctl, GEOCSV_VB3, "starting validate  datetime: " +
       str(datetime.datetime.now(pytz.utc).isoformat()))
 
     gecsv = self.createGeocsvObj(pctl['input_resrc'], pctl['input_bytes'])
 
     # note: creating a list of keys here for compatability between py 2.x and 3.x
     msglist = list(metrcs.keys())
-    self.report_any(pctl, "------- GeoCSV_Validate - metric fields: " +
+    self.report_any(pctl, GEOCSV_VB3, "metric fields: " +
       str(msglist))
 
     looping = True
@@ -555,7 +550,7 @@ class GeocsvValidator(object):
           # handle non-octothorp lines
           self.handle_csv_row(rowStr, gecsv['delimiter'], metrcs, pctl, False)
       except StopIteration:
-        self.report_any(pctl, "------- GeoCSV_Validate - finished validate," +
+        self.report_any(pctl, GEOCSV_VB3, "finished validate," +
             " datetime: " + str(datetime.datetime.now(pytz.utc).isoformat()))
         looping = False
       finally:
@@ -583,7 +578,7 @@ class GeocsvValidator(object):
         if itm == 'GeoCSV_Validate_metrics':
           rstr += "-- " + str(itm) + ": " + oderedItemsToList(report[itm]) + "\n"
         elif itm == 'dataset_isValidated':
-          # expecting data_isValidated to be the first line of the report since
+          # expecting dataset_isValidated to be the first line of the report since
           # the report should be ordered
 
           odinfo = collections.OrderedDict()
@@ -656,14 +651,14 @@ class GeocsvValidator(object):
   # header values against the GeoCSV standard.
   def check_geocsv_fields(self, metrcs, gecsv):
     report = collections.OrderedDict()
-    report['data_isValidated'] = True
+    report['dataset_isValidated'] = True
     report['input_resrc'] = gecsv['input_resrc']
     report['input_bytes_len'] = gecsv['input_bytes_len']
     report['GeoCSV_Validate_metrics'] = metrcs
 
     # check for start
     if (not gecsv['geocsv_start_found']):
-      report['data_isValidated'] = False
+      report['dataset_isValidated'] = False
       report['WARNING_no_geocsv_start'] = 'No start-of-dataset found,' + \
           ' expecting this line first: \n' + str(GEOCSV_REQUIRED_START_LITERAL)
 
@@ -681,20 +676,20 @@ class GeocsvValidator(object):
         gecsvFieldCntSet.add(len(row))
 
     if len(gecsvFieldCntSet) > 1:
-      report['data_isValidated'] = False
+      report['dataset_isValidated'] = False
       report['ERROR_geocsv_field_size'] = 'Inconsistent geocsv field sizes'
       showGeoCSVFldsDict = True
 
     # check for consistent data field values
     if len(metrcs['dataFieldsCntSet']) > 1:
-      report['data_isValidated'] = False
+      report['dataset_isValidated'] = False
       report['ERROR_data_field_size'] = 'There is more than one size for data ' + \
           'rows, row sizes: ' + str(metrcs['dataFieldsCntSet'])
 
     # check for consistent field sizes between data and geocsv field parameters
     if len(metrcs['dataFieldsCntSet'].union(gecsvFieldCntSet)) >\
             max(len(metrcs['dataFieldsCntSet']), len(gecsvFieldCntSet)):
-      report['data_isValidated'] = False
+      report['dataset_isValidated'] = False
       report['ERROR_ geocsv_to_data_field_size'] = 'A row size is inconsistent' + \
           ' with geocsv field size, data row sizes: ' + str(metrcs['dataFieldsCntSet']) + \
           '  geocsv field sizes: ' + str(gecsvFieldCntSet)
@@ -702,42 +697,42 @@ class GeocsvValidator(object):
 
     # check for field size of one, which may imply a missing delimiter keyword
     # Note: this check must follow the ERROR_ geocsv_to_data_field_size check
-    if report['data_isValidated']:
+    if report['dataset_isValidated']:
       # only check if data field and keyword fields are consistent
       if 1 in metrcs['dataFieldsCntSet'] and len(metrcs['dataFieldsCntSet']) == 1 \
          and 1 in gecsvFieldCntSet and len(gecsvFieldCntSet) == 1:
-        # note: not set#report['data_isValidated'] = False
+        # note: not set#report['dataset_isValidated'] = False
         report['INFO_all_fields_sizes_are_1'] = 'This may be correct, or the delimiter ' + \
             'keyword may be missing.'
 
     # check for null data field values
     if metrcs['nullFieldCnt'] > 0:
-      # note: not set#report['data_isValidated'] = False
+      # note: not set#report['dataset_isValidated'] = False
       report['INFO_data_field_null'] = 'At least one data field ' + \
           'was zero length (i.e. null), null count: ' + str(metrcs['nullFieldCnt'])
 
     if metrcs['unknownFieldTypeCnt'] > 0:
-      report['data_isValidated'] = False
+      report['dataset_isValidated'] = False
       report['ERROR_unknown_field_type'] = 'There are one or more unknown field types ' + \
           'in the field_type keyword, count: ' + str(metrcs['unknownFieldTypeCnt']) + \
           '  field_type: ' + gecsv['field_type']
 
     # check for unexpected field data type
     if metrcs['dataTypeErrorCnt'] > 0:
-      report['data_isValidated'] = False
+      report['dataset_isValidated'] = False
       report['ERROR_in_data_type'] = 'At least one data value ' + \
           'did not convert to the type specified in keyword: ' + GEOCSV_FIELD_TYPE + \
           ',  count: ' + str(metrcs['dataTypeErrorCnt'])
 
     # check for unicode in field values
     if metrcs['unicodeLineCnt'] > 0:
-      # note: not set#report['data_isValidated'] = False
+      # note: not set#report['dataset_isValidated'] = False
       report['INFO_unicode_in_field'] = 'At least one line has a data field ' + \
           'with a UNICODE character, count: ' + str(metrcs['unicodeLineCnt'])
 
     # check for null data field values
     if metrcs['linep1ByteCnt'] > GEOCSV_RUNAWAY_LIMIT:
-      report['data_isValidated'] = False
+      report['dataset_isValidated'] = False
       report['WARNING_runaway_byte_limit_exceded'] = 'The byte count of ' + \
           'incoming data on each line plus 1 byte counted for each line, ' + \
           'exceded: ' + str(GEOCSV_RUNAWAY_LIMIT)

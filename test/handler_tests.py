@@ -44,14 +44,14 @@ class GeoCSVTests(unittest.TestCase):
 
     if pctl['write_report']:
       print()
-      print("****** expected outcome: ", expected_outcome)
+      print("@@@@@@ START ONE TEST - expected outcome: ", expected_outcome)
       print("****** target_url: ", target_url)
       print("****** byte_str: ", byte_str)
       print("****** results:")
 
     geocsvObj = validator.GeocsvValidator.GeocsvValidator(sys.stdout)
     report = geocsvObj.doReport(pctl)
-    if report['data_isValidated'] == expected_outcome:
+    if report['dataset_isValidated'] == expected_outcome:
       pass
     else:
       self.fail(report)
