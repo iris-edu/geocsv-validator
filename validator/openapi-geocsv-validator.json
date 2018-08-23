@@ -7,8 +7,7 @@
 A REST like service to validate GeoCSV content.
 
 
-GeocsvValidator will read content from the resource specified with the
-    **input_resrc** parameter.
+GeocsvValidator will read content from text provided by POST.
 A short report shows validation results and counts of
  properties like null fields, type mismatch, line count, etc.
 
@@ -36,13 +35,23 @@ characters, use and the **unicode** parameter.
     },
     "paths": {
         "/geocsv/1/validate": {
-            "get": {
+            "post": {
                 "tags": [
                     "GeoCSV"
                 ],
                 "summary": "Get validate results from query against an input URL",
                 "description": "<p>The <strong>validate</strong> service provides a report from the validation operation.<p>TBD <a href='http://tbd.line/xyz'>See TBD</a></p>",
                 "operationId": "getValidate",
+                "requestBody": {
+                    "description": "GeoCSV text",
+                    "content": {
+                        "text/plain": {
+                            "schema": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Successful",
@@ -156,29 +165,6 @@ characters, use and the **unicode** parameter.
                 }
             },
             "parameters": [
-                {
-                    "name": "input_resrc",
-                    "in": "query",
-                    "description": "
-A URL or filename - sample URLs:
-
-
-http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv
-
-
-https://service.iris.edu/ph5ws/station/1/query?level=network&format=geocsv&nodata=404
-
-
-http://service.iris.edu/fdsnws/station/1/query?net=IU,M*&cha=BHZ&level=network&format=geocsv&includecomments=true&nodata=404
-
-
-**Note:** when entering parameter **input_resrc** in the browser, **replace \"&\" characters with %26**
-",
-                    "required": true,
-                    "schema": {
-                        "type": "string"
-                    }
-                },
                 {
                     "name": "verbose",
                     "in": "query",
