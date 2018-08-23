@@ -13,6 +13,7 @@ if [ -z "$*" ]; then
     echo "    showerr1 - bad parameter"
     echo "    showerr2 - bad host name"
     echo "    showerr3 - bad service name"
+    echo "    showerr4 - fail to get"
     echo "*****"
 
     exit 0
@@ -85,6 +86,17 @@ showerr3(){
   curl "${badServiceName}" | head
   lines_of_1_burst "showing validator output from bad service name";
   curl "http:///${host}:${port}/geows/geocsv/1/validate?input_resrc=${badServiceName}"
+}
+
+# this one should show that it is not possible to list a file on the server
+# i.e. input_resrc is an unknown parameter
+showerr4(){
+  fileURL="file://`pwd`/test/resources/IRIS_Spectral_Amplitudes.geocsv"
+  fileURL="file:///wss_config/geows.geocsv.1-rabbitconfig-publisher.properties"
+  lines_of_1_burst "showing head of html of output from bad service name";
+  curl "${fileURL}" | head
+  lines_of_1_burst "showing validator output from file URL";
+  curl "http:///${host}:${port}/geows/geocsv/1/validate?input_resrc=${fileURL}&verbose=true"
 }
 
 lines_of_1_burst() {
