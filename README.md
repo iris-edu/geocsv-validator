@@ -17,6 +17,7 @@ A command line tool for validating GeoCSV content. There is also a prototype ser
   - small changes to report messages
 - 2018-06-29
   - add OpenAPI 3 spec
+- 2018-09-07 - removed the tornado service
 
 
 GeocsvValidator.py reads content from the resource specified with parameter
@@ -36,7 +37,6 @@ characters, use and the **unicode** parameter.
 Folder |  Description
 --------------- | --------------------------
 validator | the command line tool
-service | prototype tornado service
 test | unit test
 
 ## Running the validator from command line
@@ -79,29 +79,4 @@ optional arguments:
 validator/GeocsvValidator.py --input_resrc 'http://service.iris.edu/irisws/availability/1/extent?network=IU&station=ANMO&format=geocsv'
 # this run will show 174 lines read and a validation of False because at least one field is null, in this particular case 63 fields are null.
 
-```
-
-## Running the tornado server
-
-This tornado server is setup for selected local testing only, it is not setup for production.
-
-``` bash
-service/geocsvTornadoService.py
-
-# by default, the service is listening on port 8989
-# and will refer to http://localhost:8988 for documentation.
-
-# These environmental variable maybe used to set alternative values,
-# GEOCSV_LISTENING_PORT and GEOCSV_DOCUMENT_URL
-
-# When the server is running, the following features are links are currently active.
-Sample queries
-
-http://localhost:8989/geows/geocsv/1/validate?input_resrc=http://service.iris.edu/irisws/availability/1/extent?network=IU%26station=ANMO%26format=geocsv
-
-http://localhost:8989/geows/geocsv/1/validate?input_resrc=http://service.iris.edu/fdsnws/station/1/query?level=station%26format=geocsv%26includecomments=true%26nodata=404
-
-http://localhost:8989/geows/geocsv/1/version
-
-http://localhost:8989/geows/geocsv/1/vforms
 ```
